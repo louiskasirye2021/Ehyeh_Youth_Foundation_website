@@ -1,7 +1,7 @@
 
-  # Modern Black-and-White Website
+  # Kemlok-Technologies
 
-  This is a code bundle for Modern Black-and-White Website. The original project is available at https://www.figma.com/design/XIse1bkA5XWVcZfHC1RPn3/Modern-Black-and-White-Website.
+  This is a code bundle for Modern Black-and-White Website. The original project is available at https://www.figma.com/design/XIse1bkA5XWVcZfHC1RPn3/Kemlok-Technologies.
 
   ## Running the code
 
