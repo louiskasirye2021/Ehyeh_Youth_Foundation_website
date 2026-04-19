@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { Save, RefreshCw } from 'lucide-react';
 import { getAboutInfo, saveAboutInfo } from '../../utils/adminStorage';
 import { toast } from 'sonner@2.0.3';

@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { HelpCircle, ArrowLeft, ChevronDown } from 'lucide-react';
 import { useState } from 'react';

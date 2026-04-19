@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, Clock, Calendar, Tag } from 'lucide-react';
 
 interface BlogModalProps {

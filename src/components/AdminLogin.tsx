@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { Lock, Eye, EyeOff, LogIn } from 'lucide-react';
 import logo from 'figma:asset/4ecad429389694574aea2121c507d8e3e7142ef3.png';
 

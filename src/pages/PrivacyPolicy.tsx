@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { Shield, ArrowLeft } from 'lucide-react';
 import { AbstractShapes } from '../components/AbstractShapes';

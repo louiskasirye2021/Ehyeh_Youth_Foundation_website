@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { Calendar, Tag, ArrowRight } from 'lucide-react';
 import { AbstractShapes } from './AbstractShapes';

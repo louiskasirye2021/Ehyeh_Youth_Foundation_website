@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { Star, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AbstractShapes } from './AbstractShapes';

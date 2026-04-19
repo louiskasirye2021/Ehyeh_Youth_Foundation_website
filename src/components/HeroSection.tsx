@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { AbstractShapes } from './AbstractShapes';
 import heroImage from 'figma:asset/20819b45a1e4911bf8c3e2175f46ea1338b52a61.png';

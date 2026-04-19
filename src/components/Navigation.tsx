@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import logo from 'figma:asset/4ecad429389694574aea2121c507d8e3e7142ef3.png';
 
 export function Navigation() {

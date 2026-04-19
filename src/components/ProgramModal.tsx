@@ -1,5 +1,5 @@
 import { X, CheckCircle, Users, Clock, Target, Brain, Heart, Lightbulb, HandHeart } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
 interface CorePillar {
