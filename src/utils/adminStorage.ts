@@ -541,32 +541,32 @@ export function resetAdminData() {
 // Get data
 export function getPrograms() {
   const data = localStorage.getItem(STORAGE_KEYS.PROGRAMS);
-  return data ? JSON.parse(data) : [];
+  return data ? JSON.parse(data) : INITIAL_DATA.programs;
 }
 
 export function getTestimonials() {
   const data = localStorage.getItem(STORAGE_KEYS.TESTIMONIALS);
-  return data ? JSON.parse(data) : [];
+  return data ? JSON.parse(data) : INITIAL_DATA.testimonials;
 }
 
 export function getBlogPosts() {
   const data = localStorage.getItem(STORAGE_KEYS.BLOG);
-  return data ? JSON.parse(data) : [];
+  return data ? JSON.parse(data) : INITIAL_DATA.blog;
 }
 
 export function getGalleryImages() {
   const data = localStorage.getItem(STORAGE_KEYS.GALLERY);
-  return data ? JSON.parse(data) : [];
+  return data ? JSON.parse(data) : INITIAL_DATA.gallery;
 }
 
 export function getTeamMembers() {
   const data = localStorage.getItem(STORAGE_KEYS.TEAM);
-  return data ? JSON.parse(data) : [];
+  return data ? JSON.parse(data) : INITIAL_DATA.team;
 }
 
 export function getAboutInfo() {
   const data = localStorage.getItem(STORAGE_KEYS.ABOUT);
-  return data ? JSON.parse(data) : {};
+  return data ? JSON.parse(data) : INITIAL_DATA.about;
 }
 
 // Save data

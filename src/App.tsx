@@ -23,9 +23,10 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
 
+  // Initialize admin data immediately on app load
+  initializeAdminData();
+
   useEffect(() => {
-    // Initialize admin data on first load
-    initializeAdminData();
 
     // Check if admin is already authenticated
     const token = localStorage.getItem('eyf_admin_token');
