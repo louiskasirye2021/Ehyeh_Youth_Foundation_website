@@ -1,116 +1,151 @@
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
-import { useState } from 'react';
-import logo from 'figma:asset/cc572572013fed7ea1d15352963344bd1131bddf.png';
+import { motion, AnimatePresence } from 'motion/react';
+import logo from 'figma:asset/4ecad429389694574aea2121c507d8e3e7142ef3.png';
 
-interface NavigationProps {
-  currentPage: string;
-  setCurrentPage: (page: string) => void;
-}
+export function Navigation() {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-export function Navigation({ currentPage, setCurrentPage }: NavigationProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToSection = (id: string) => {
+    // Close mobile menu first
+    setIsMobileMenuOpen(false);
+    
+    // Small delay to ensure menu closes before scrolling
+    setTimeout(() => {
+      // Check if we're on the home page
+      const currentHash = window.location.hash;
+      
+      if (currentHash && currentHash !== '#/' && currentHash !== '#' && currentHash !== '') {
+        // If we're on another page, navigate home first
+        window.location.hash = '/';
+        // Wait for navigation to complete, then scroll
+        setTimeout(() => {
+          const element = document.getElementById(id);
+          if (element) {
+            const yOffset = -80; // Account for fixed navbar
+            const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+          }
+        }, 300);
+      } else {
+        // We're already on home page, just scroll
+        const element = document.getElementById(id);
+        if (element) {
+          const yOffset = -80; // Account for fixed navbar
+          const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+      }
+    }, 100);
+  };
 
   const navItems = [
-    { id: 'home', label: 'Home' },
-    { id: 'about', label: 'About' },
-    { id: 'services', label: 'Services' },
-    { id: 'contact', label: 'Contact' },
+    { label: 'Home', id: 'hero' },
+    { label: 'About', id: 'about' },
+    { label: 'Programs', id: 'programs' },
+    { label: 'Gallery', id: 'gallery' },
+    { label: 'Blog', id: 'blog' },
+    { label: 'Team', id: 'team' },
+    { label: 'Contact', id: 'contact' },
   ];
-
-  const handleNavClick = (pageId: string) => {
-    setCurrentPage(pageId);
-    setMobileMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   return (
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-lg border-b border-white/10"
+      transition={{ duration: 0.5 }}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-transparent'
+      }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <motion.button
-            onClick={() => handleNavClick('home')}
-            className="relative group"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <button
+            onClick={() => scrollToSection('hero')}
+            className="flex items-center space-x-2 group"
           >
-            <img 
-              src={logo} 
-              alt="Kemlok Technologies" 
-              className="h-14 md:h-16 w-auto"
+            <motion.img
+              src={logo}
+              alt="Ehyeh Youth Foundation"
+              className="h-16 w-auto md:h-20 lg:h-24 object-contain"
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.2 }}
             />
-          </motion.button>
+          </button>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
+          <div className="hidden lg:flex items-center space-x-8">
             {navItems.map((item) => (
-              <motion.button
+              <button
                 key={item.id}
-                onClick={() => handleNavClick(item.id)}
-                className={`px-6 py-2 relative group ${
-                  currentPage === item.id ? 'text-white' : 'text-white/60'
+                onClick={() => scrollToSection(item.id)}
+                className={`transition-colors relative group ${
+                  isScrolled ? 'text-black hover:text-[#C39223]' : 'text-white hover:text-[#C39223]'
                 }`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
               >
-                <span className="relative z-10 tracking-wide">{item.label}</span>
-                {currentPage === item.id && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute inset-0 bg-white/10 rounded"
-                    transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-                <motion.div
-                  className="absolute bottom-0 left-0 right-0 h-[2px] bg-white"
-                  initial={{ scaleX: 0 }}
-                  whileHover={{ scaleX: 1 }}
-                  transition={{ duration: 0.3 }}
-                />
-              </motion.button>
+                {item.label}
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#C39223] transition-all group-hover:w-full"></span>
+              </button>
             ))}
+            <button
+              onClick={() => scrollToSection('contact')}
+              className="bg-[#C39223] text-white px-6 py-2 rounded-full hover:bg-[#b08520] transition-all hover:scale-105"
+            >
+              Get Involved
+            </button>
           </div>
 
           {/* Mobile Menu Button */}
-          <motion.button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2"
-            whileTap={{ scale: 0.9 }}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className={`lg:hidden p-2 z-50 ${isScrolled ? 'text-black' : 'text-white'}`}
+            aria-label="Toggle menu"
           >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </motion.button>
+            {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+          </button>
         </div>
       </div>
 
       {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          className="md:hidden bg-black border-t border-white/10"
-        >
-          <div className="px-4 py-4 space-y-2">
-            {navItems.map((item) => (
-              <motion.button
-                key={item.id}
-                onClick={() => handleNavClick(item.id)}
-                className={`block w-full text-left px-4 py-3 rounded ${
-                  currentPage === item.id ? 'bg-white/10 text-white' : 'text-white/60'
-                }`}
-                whileTap={{ scale: 0.98 }}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="lg:hidden bg-white/98 backdrop-blur-md shadow-lg overflow-hidden"
+          >
+            <div className="container mx-auto px-4 py-6 space-y-2">
+              {navItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => scrollToSection(item.id)}
+                  className="block w-full text-left text-black hover:text-[#C39223] hover:bg-gray-100 py-3 px-4 rounded-lg transition-all text-lg"
+                >
+                  {item.label}
+                </button>
+              ))}
+              <button
+                onClick={() => scrollToSection('contact')}
+                className="w-full bg-[#C39223] text-white px-6 py-3 rounded-full hover:bg-[#b08520] transition-all mt-4 text-lg"
               >
-                {item.label}
-              </motion.button>
-            ))}
-          </div>
-        </motion.div>
-      )}
+                Get Involved
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.nav>
   );
 }
