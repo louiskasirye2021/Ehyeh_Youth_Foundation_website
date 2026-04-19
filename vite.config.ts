@@ -71,5 +71,5 @@ function figmaAssetResolver() {
       port: 3000,
       open: true,
     },
-    base: '/Ehyeh-Youth-Foundation_website/',
+    base: '/Ehyeh_Youth_Foundation_website/',
   });
