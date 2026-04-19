@@ -4,7 +4,7 @@ import { Phone, Mail, MapPin, Send } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { AbstractShapes } from './AbstractShapes';
 import emailjs from '@emailjs/browser';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { EMAILJS_CONFIG } from '../utils/emailConfig';
 
 export function ContactSection() {
