@@ -17,16 +17,20 @@ export function AboutSection() {
   });
 
   useEffect(() => {
-    const storedAbout = getAboutInfo();
-    if (storedAbout && (storedAbout.mission || storedAbout.vision)) {
-      setAboutInfo(storedAbout);
-    } else {
-      // Fallback to default values if not set
-      setAboutInfo({
-        mission: 'To inspire and empower young minds, fostering personal growth, leadership skills, and a sense of community, while providing opportunities for education, mentorship, and positive impact thereby shaping a resilient and forward-thinking generation.',
-        vision: 'We envision a world where every young person is equipped with the knowledge, skills, and confidence to lead transformative change—creating a future defined by innovation, compassion, and shared prosperity across communities globally.'
-      });
-    }
+    let active = true;
+    getAboutInfo().then((storedAbout) => {
+      if (!active) return;
+      if (storedAbout && (storedAbout.mission || storedAbout.vision)) {
+        setAboutInfo(storedAbout);
+      } else {
+        // Fallback to default values if not set
+        setAboutInfo({
+          mission: 'To inspire and empower young minds, fostering personal growth, leadership skills, and a sense of community, while providing opportunities for education, mentorship, and positive impact thereby shaping a resilient and forward-thinking generation.',
+          vision: 'We envision a world where every young person is equipped with the knowledge, skills, and confidence to lead transformative change—creating a future defined by innovation, compassion, and shared prosperity across communities globally.'
+        });
+      }
+    });
+    return () => { active = false; };
   }, []);
 
   const containerVariants = {

@@ -10,7 +10,7 @@ import {
   LogOut,
   Menu,
   X,
-  RefreshCw,
+  UploadCloud,
   Info
 } from 'lucide-react';
 import { ProgramsManagement } from './admin/ProgramsManagement';
@@ -19,7 +19,7 @@ import { TeamManagement } from './admin/TeamManagement';
 import { BlogManagement } from './admin/BlogManagement';
 import { TestimonialsManagement } from './admin/TestimonialsManagement';
 import { AboutManagement } from './admin/AboutManagement';
-import { forceReInitializeAdminData } from '../utils/adminStorage';
+import { findLegacyEdits, publishLegacyEdits, clearLegacyEdits } from '../utils/legacyImport';
 import { toast } from 'sonner@2.0.3';
 import logo from 'figma:asset/4ecad429389694574aea2121c507d8e3e7142ef3.png';
 
@@ -32,6 +32,30 @@ type Section = 'overview' | 'programs' | 'gallery' | 'team' | 'blog' | 'testimon
 export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [activeSection, setActiveSection] = useState<Section>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [legacyEdits, setLegacyEdits] = useState(() => findLegacyEdits());
+  const [publishing, setPublishing] = useState(false);
+  const legacySections = Object.keys(legacyEdits);
+
+  const handlePublishLegacy = async () => {
+    if (!window.confirm('This replaces the live content of these sections with the edits saved in this browser: ' + legacySections.join(', ') + '. Continue?')) return;
+    setPublishing(true);
+    const toastId = toast.loading('Publishing edits from this browser…');
+    try {
+      await publishLegacyEdits(legacyEdits);
+      setLegacyEdits({});
+      toast.success('Edits published. They are now live for every visitor.', { id: toastId });
+    } catch (err: any) {
+      toast.error(err?.message || 'Publishing failed. Try again.', { id: toastId });
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handleDiscardLegacy = () => {
+    if (!window.confirm('Discard the unpublished edits saved in this browser? This cannot be undone.')) return;
+    clearLegacyEdits();
+    setLegacyEdits({});
+  };
 
   const menuItems = [
     { id: 'overview' as Section, label: 'Overview', icon: LayoutDashboard },
@@ -50,39 +74,45 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
           <div>
             <h1 className="text-3xl text-black mb-6">Dashboard Overview</h1>
             
-            {/* Fix Images Alert Box */}
-            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-8">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Info size={24} className="text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-xl text-black mb-2">Image Management</h3>
-                  <p className="text-gray-700 mb-4">
-                    If you're experiencing issues with images not loading correctly (blank images, broken links, or corrupted uploads), 
-                    click the button below to restore all original authentic EYF images across the entire website.
-                  </p>
-                  <button
-                    onClick={() => {
-                      if (window.confirm('This will restore all original images across Programs, Gallery, Blog, Testimonials, and Team sections. Any custom uploaded images will be replaced. Continue?')) {
-                        console.log('🔧 Manual image fix triggered...');
-                        sessionStorage.removeItem('eyf_data_validated');
-                        forceReInitializeAdminData();
-                        toast.success('All images restored! Reloading page...');
-                        setTimeout(() => {
-                          window.location.reload();
-                        }, 800);
-                      }
-                    }}
-                    className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <RefreshCw size={18} />
-                    Fix All Images Now
-                  </button>
+            {legacySections.length > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-8">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-[#C39223] rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Info size={24} className="text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl text-black mb-2">Unpublished edits found in this browser</h3>
+                    <p className="text-gray-700 mb-4">
+                      Earlier versions of this admin panel saved changes only on the computer they were made on,
+                      so visitors never saw them. This browser has saved edits for: {legacySections.join(', ')}.
+                      Publish them to make them live, or discard them.
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        onClick={handlePublishLegacy}
+                        disabled={publishing}
+                        className="flex items-center gap-2 px-6 py-3 bg-[#C39223] text-white rounded-full hover:bg-[#b08520] transition-colors disabled:opacity-50"
+                      >
+                        <UploadCloud size={18} />
+                        {publishing ? 'Publishing…' : 'Publish these edits'}
+                      </button>
+                      <button
+                        onClick={handleDiscardLegacy}
+                        disabled={publishing}
+                        className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      >
+                        Discard
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-            
+            )}
+
+            <p className="text-gray-600 mb-6">
+              Changes you save here go live for every visitor straight away. Visitors who already have the page open see them after a refresh.
+            </p>
+
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {menuItems.slice(1).map((item) => {
                 const Icon = item.icon;
@@ -214,28 +244,11 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 ← Back to Website
               </button>
               <button
-                onClick={() => {
-                  if (window.confirm('This will reload the original website data and fix any broken image links. Are you sure?')) {
-                    // Clear session validation flag to force re-validation
-                    sessionStorage.removeItem('eyf_data_validated');
-                    forceReInitializeAdminData();
-                    toast.success('Data reset successfully! Reloading page...');
-                    setTimeout(() => {
-                      window.location.reload();
-                    }, 500);
-                  }
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-              >
-                <RefreshCw size={16} />
-                Reset to Original Data
-              </button>
-              <button
                 onClick={onLogout}
                 className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 <LogOut size={18} />
-                Logout
+                Sign out
               </button>
             </div>
           </div>

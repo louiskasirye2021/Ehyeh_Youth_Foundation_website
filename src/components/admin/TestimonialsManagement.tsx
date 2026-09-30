@@ -26,12 +26,14 @@ export function TestimonialsManagement() {
     loadTestimonials();
   }, []);
 
-  const loadTestimonials = () => {
-    const data = getTestimonials();
+  const [saving, setSaving] = useState(false);
+
+  const loadTestimonials = async () => {
+    const data = await getTestimonials(true);
     setTestimonials(data);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const testimonial = {
       id: formData.id || Date.now().toString(),
       name: formData.name,
@@ -42,19 +44,30 @@ export function TestimonialsManagement() {
       image: formData.image
     };
 
-    saveTestimonial(testimonial);
-    loadTestimonials();
-    setEditingId(null);
-    resetForm();
-    toast.success('Testimonial saved successfully!');
+    setSaving(true);
+    try {
+      await saveTestimonial(testimonial);
+      await loadTestimonials();
+      setEditingId(null);
+      resetForm();
+      toast.success('Testimonial saved. It is now live on the website.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not save the testimonial.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this testimonial?')) return;
 
-    deleteTestimonial(id);
-    loadTestimonials();
-    toast.success('Testimonial deleted successfully!');
+    try {
+      await deleteTestimonial(id);
+      await loadTestimonials();
+      toast.success('Testimonial deleted.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not delete the testimonial.');
+    }
   };
 
   const startEdit = (testimonial?: any) => {
@@ -230,7 +243,7 @@ export function TestimonialsManagement() {
                   const file = e.target.files?.[0];
                   if (file) {
                     handleFileUpload(file, (dataUrl) => {
-                      setFormData({ ...formData, image: dataUrl });
+                      setFormData((prev) => ({ ...prev, image: dataUrl }));
                     });
                   }
                 }}
@@ -285,7 +298,8 @@ export function TestimonialsManagement() {
             <div className="flex gap-4 pt-4">
               <button
                 onClick={handleSave}
-                className="flex-1 bg-[#C39223] text-white px-6 py-3 rounded-full hover:bg-[#b08520] transition-all flex items-center justify-center gap-2"
+                disabled={saving}
+                className="flex-1 bg-[#C39223] text-white px-6 py-3 rounded-full hover:bg-[#b08520] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save size={20} />
                 <span>Save Testimonial</span>

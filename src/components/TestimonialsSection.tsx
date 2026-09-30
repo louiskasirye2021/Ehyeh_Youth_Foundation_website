@@ -19,8 +19,11 @@ export function TestimonialsSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    const storedTestimonials = getTestimonials();
-    setTestimonials(storedTestimonials);
+    let active = true;
+    getTestimonials().then((storedTestimonials) => {
+      if (active) setTestimonials(storedTestimonials);
+    });
+    return () => { active = false; };
   }, []);
 
   const prevSlide = () => {

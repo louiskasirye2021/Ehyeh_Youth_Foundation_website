@@ -22,12 +22,16 @@ export function GalleryManagement() {
     loadImages();
   }, []);
 
-  const loadImages = () => {
-    const data = getGalleryImages();
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const loadImages = async () => {
+    const data = await getGalleryImages(true);
     setImages(data);
+    setLoaded(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.url) {
       toast.error('Please upload an image');
       return;
@@ -40,19 +44,30 @@ export function GalleryManagement() {
       category: formData.category
     };
 
-    saveGalleryImage(image);
-    loadImages();
-    setShowAddForm(false);
-    resetForm();
-    toast.success('Image added successfully!');
+    setSaving(true);
+    try {
+      await saveGalleryImage(image);
+      await loadImages();
+      setShowAddForm(false);
+      resetForm();
+      toast.success('Image added. It is now live on the website.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not add the image.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this image?')) return;
 
-    deleteGalleryImage(id);
-    loadImages();
-    toast.success('Image deleted successfully!');
+    try {
+      await deleteGalleryImage(id);
+      await loadImages();
+      toast.success('Image deleted.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not delete the image.');
+    }
   };
 
   const resetForm = () => {
@@ -63,7 +78,7 @@ export function GalleryManagement() {
     });
   };
 
-  if (images.length === 0 && !showAddForm) {
+  if (!loaded) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-gray-600">Loading gallery...</div>
@@ -89,7 +104,7 @@ export function GalleryManagement() {
                   const file = e.target.files?.[0];
                   if (file) {
                     handleFileUpload(file, (dataUrl) => {
-                      setFormData({ ...formData, url: dataUrl });
+                      setFormData((prev) => ({ ...prev, url: dataUrl }));
                     });
                   }
                 }}
@@ -134,7 +149,8 @@ export function GalleryManagement() {
           <div className="flex gap-4 mt-6">
             <button
               onClick={handleSave}
-              className="flex-1 bg-[#C39223] text-white px-6 py-3 rounded-full hover:bg-[#b08520] transition-all flex items-center justify-center gap-2"
+              disabled={saving}
+              className="flex-1 bg-[#C39223] text-white px-6 py-3 rounded-full hover:bg-[#b08520] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus size={20} />
               <span>Add Image</span>

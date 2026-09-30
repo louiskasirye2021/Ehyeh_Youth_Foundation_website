@@ -15,20 +15,20 @@ export function AboutManagement() {
     loadAboutInfo();
   }, []);
 
-  const loadAboutInfo = () => {
-    const data = getAboutInfo();
+  const loadAboutInfo = async () => {
+    const data = await getAboutInfo(true);
     if (data && (data.mission || data.vision)) {
       setAboutInfo(data);
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setLoading(true);
     try {
-      saveAboutInfo(aboutInfo);
-      toast.success('About information updated successfully!');
-    } catch (error) {
-      toast.error('Failed to update about information');
+      await saveAboutInfo(aboutInfo);
+      toast.success('About section saved. It is now live on the website.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not save the About section.');
     } finally {
       setLoading(false);
     }

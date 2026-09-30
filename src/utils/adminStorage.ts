@@ -1,3 +1,4 @@
+import { supabase } from '../lib/supabase';
 import lucyImage from 'figma:asset/25ce06d8368056839a9b2b8982c7dd47409a36cd.png';
 import latifahImage from 'figma:asset/2b75ebe65558dd1cd0425b1798eafe07b2dc0f65.png';
 import nabasaImage from '../imports/ChatGPT_Image_Apr_15__2026__04_38_01_PM-removebg-preview.png';
@@ -26,16 +27,6 @@ import easterOutreach2 from 'figma:asset/42be2c9f2d3fbc59a4c12d000474a2feeacde27
 import stBalikudembeStudents from 'figma:asset/82cd7a56e33baae87fcbeea52ca9768829fe6f9c.png';
 import stBalikudembeSession from 'figma:asset/063bf2501bf926301a229a559a409b1d81accced.png';
 
-// Storage keys
-const STORAGE_KEYS = {
-  PROGRAMS: 'eyf_admin_programs',
-  TESTIMONIALS: 'eyf_admin_testimonials',
-  BLOG: 'eyf_admin_blog',
-  GALLERY: 'eyf_admin_gallery',
-  TEAM: 'eyf_admin_team',
-  ABOUT: 'eyf_admin_about',
-  INITIALIZED: 'eyf_admin_initialized'
-};
 
 // Initial data with all original hardcoded content
 const INITIAL_DATA = {
@@ -369,319 +360,181 @@ const INITIAL_DATA = {
   }
 };
 
-// Initialize data if not already done
-export function initializeAdminData() {
-  const initialized = localStorage.getItem(STORAGE_KEYS.INITIALIZED);
-  
-  if (!initialized) {
-    console.log('🚀 Initializing admin data with original website content...');
-    
-    localStorage.setItem(STORAGE_KEYS.PROGRAMS, JSON.stringify(INITIAL_DATA.programs));
-    localStorage.setItem(STORAGE_KEYS.TESTIMONIALS, JSON.stringify(INITIAL_DATA.testimonials));
-    localStorage.setItem(STORAGE_KEYS.BLOG, JSON.stringify(INITIAL_DATA.blog));
-    localStorage.setItem(STORAGE_KEYS.GALLERY, JSON.stringify(INITIAL_DATA.gallery));
-    localStorage.setItem(STORAGE_KEYS.TEAM, JSON.stringify(INITIAL_DATA.team));
-    localStorage.setItem(STORAGE_KEYS.ABOUT, JSON.stringify(INITIAL_DATA.about));
-    localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
-    
-    console.log('✅ Admin data initialized successfully!');
-    console.log('📊 Content loaded:', {
-      programs: INITIAL_DATA.programs.length,
-      testimonials: INITIAL_DATA.testimonials.length,
-      blog: INITIAL_DATA.blog.length,
-      gallery: INITIAL_DATA.gallery.length,
-      team: INITIAL_DATA.team.length
-    });
-  } else {
-    console.log('✓ Admin data already initialized');
-    // Check if we need to validate (only once per session)
-    const validatedThisSession = sessionStorage.getItem('eyf_data_validated');
-    
-    if (!validatedThisSession) {
-      console.log('🔍 Validating data integrity...');
-      const needsReload = validateAndCleanData();
-      
-      // Mark as validated for this session
-      sessionStorage.setItem('eyf_data_validated', 'true');
-      
-      // If data was corrupted and reset, reload the page to refresh all components
-      if (needsReload) {
-        console.log('🔄 Reloading page to apply fresh data...');
-        setTimeout(() => {
-          window.location.reload();
-        }, 100);
-      }
-    }
+
+// ---------------------------------------------------------------------------
+// Shared content storage (Supabase)
+//
+// All site content lives in the `site_content` table: one row per section,
+// with the section's data stored as JSON. Everyone who visits the site reads
+// the same rows, so an edit made in the admin panel shows up for every visitor
+// on their next page load. No rebuild or redeploy is needed.
+//
+// If a section has never been saved, or Supabase can't be reached, the
+// original content above (INITIAL_DATA) is shown instead.
+// ---------------------------------------------------------------------------
+
+
+export type SectionKey = keyof typeof INITIAL_DATA;
+
+const TABLE = 'site_content';
+
+// Images bundled with the site get new hashed URLs whenever Vite rebuilds
+// them, so they're saved to the database as stable tokens ("asset:lucyImage")
+// and turned back into real URLs when read.
+const BUNDLED_IMAGES: Record<string, string> = {
+  lucyImage, latifahImage, nabasaImage, louisImage,
+  lmpImage, e1t1Image, skillsHubImage,
+  victorImage, elizabethImage, rashidImage,
+  drSabrinaSession, mrIsingomaSession, easterOutreachNaguru,
+  outreachImage, easterImage, menteesImage, easterOutreach2,
+  stBalikudembeStudents, stBalikudembeSession,
+};
+const ASSET_PREFIX = 'asset:';
+const urlToAssetKey = new Map(
+  Object.entries(BUNDLED_IMAGES).map(([key, url]) => [url, key])
+);
+
+function encodeAssets(value: any): any {
+  if (typeof value === 'string') {
+    const key = urlToAssetKey.get(value);
+    return key ? `${ASSET_PREFIX}${key}` : value;
   }
+  if (Array.isArray(value)) return value.map(encodeAssets);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, encodeAssets(v)]));
+  }
+  return value;
 }
 
-// Validate and clean data without triggering auto-reload
-function validateAndCleanData() {
+function decodeAssets(value: any): any {
+  if (typeof value === 'string') {
+    if (value.startsWith(ASSET_PREFIX)) {
+      return BUNDLED_IMAGES[value.slice(ASSET_PREFIX.length)] ?? '';
+    }
+    return value;
+  }
+  if (Array.isArray(value)) return value.map(decodeAssets);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, decodeAssets(v)]));
+  }
+  return value;
+}
+
+function defaultsFor(section: SectionKey) {
+  return structuredClone(INITIAL_DATA[section]);
+}
+
+function describeError(error: { message?: string; code?: string }) {
+  const message = error.message || '';
+  if (error.code === '42501' || /row-level security|permission denied/i.test(message)) {
+    return 'Your account is not allowed to edit the website. Sign out, sign in again, and check that your email is listed in the admin_users table.';
+  }
+  if (/JWT|token/i.test(message)) {
+    return 'Your session has expired. Sign out and sign in again.';
+  }
+  if (/Failed to fetch|NetworkError/i.test(message)) {
+    return 'Could not reach the server. Check your internet connection and try again.';
+  }
+  return message || 'Something went wrong while saving.';
+}
+
+// One request per section per page load, shared by every component that asks.
+const cache = new Map<SectionKey, Promise<any>>();
+
+async function fetchSection(section: SectionKey) {
   try {
-    let needsReset = false;
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select('data')
+      .eq('section', section)
+      .maybeSingle();
 
-    // Check gallery for invalid data
-    const gallery = getGalleryImages();
-    const hasInvalidGallery = gallery.some((img: any) => 
-      !img.url || 
-      img.url.startsWith('blob:') || 
-      img.url === '' ||
-      img.url === 'undefined'
-    );
-
-    // Check blog for invalid images
-    const blog = getBlogPosts();
-    const hasInvalidBlog = blog.some((post: any) => 
-      !post.image || 
-      post.image.startsWith('blob:') || 
-      post.image === '' ||
-      post.image === 'undefined'
-    );
-
-    // Check programs for invalid images
-    const programs = getPrograms();
-    const hasInvalidPrograms = programs.some((program: any) => 
-      !program.image || 
-      program.image.startsWith('blob:') || 
-      program.image === '' ||
-      program.image === 'undefined'
-    );
-
-    // Check testimonials for invalid images
-    const testimonials = getTestimonials();
-    const hasInvalidTestimonials = testimonials.some((testimonial: any) => 
-      !testimonial.image || 
-      testimonial.image.startsWith('blob:') || 
-      testimonial.image === '' ||
-      testimonial.image === 'undefined'
-    );
-
-    // Check team for invalid images
-    const team = getTeamMembers();
-    const hasInvalidTeam = team.some((member: any) => 
-      !member.image || 
-      member.image.startsWith('blob:') || 
-      member.image === '' ||
-      member.image === 'undefined'
-    );
-
-    if (hasInvalidGallery || hasInvalidBlog || hasInvalidPrograms || hasInvalidTestimonials || hasInvalidTeam) {
-      console.warn('⚠️ Invalid or corrupted data detected!');
-      console.warn('Issues found:', {
-        gallery: hasInvalidGallery,
-        blog: hasInvalidBlog,
-        programs: hasInvalidPrograms,
-        testimonials: hasInvalidTestimonials,
-        team: hasInvalidTeam
-      });
-      console.log('🔄 Resetting to original images...');
-      forceReInitializeAdminData();
-      console.log('✅ Data reset complete! All images restored.');
-      needsReset = true;
-    } else {
-      console.log('✓ All data validated successfully');
+    if (error) {
+      console.error(`Could not load "${section}" content:`, error.message);
+      return defaultsFor(section);
     }
-
-    return needsReset;
-  } catch (error) {
-    console.error('Error validating data:', error);
-    return false;
+    if (!data || data.data === null || data.data === undefined) {
+      return defaultsFor(section);
+    }
+    return decodeAssets(data.data);
+  } catch (err) {
+    console.error(`Could not load "${section}" content:`, err);
+    return defaultsFor(section);
   }
 }
 
-// Clean up blob URLs from localStorage data (DEPRECATED - use validateAndCleanData instead)
-function cleanupBlobUrls() {
-  validateAndCleanData();
+/** Read a section. Pass fresh=true to skip the in-page cache (the admin panel does). */
+export function loadSection(section: SectionKey, fresh = false): Promise<any> {
+  if (fresh || !cache.has(section)) {
+    cache.set(section, fetchSection(section));
+  }
+  return cache.get(section)!;
 }
 
-// Force re-initialize data (useful for updates to hardcoded content)
-export function forceReInitializeAdminData() {
-  console.log('🔄 Force re-initializing admin data...');
-  console.log('📦 Resetting to INITIAL_DATA with imported images...');
-  
-  // Log sample data to verify images
-  console.log('Sample Gallery Image:', INITIAL_DATA.gallery[0]?.url);
-  console.log('Sample Blog Image:', INITIAL_DATA.blog[0]?.image);
-  console.log('Sample Program Image:', INITIAL_DATA.programs[0]?.image);
-  console.log('Sample Testimonial Image:', INITIAL_DATA.testimonials[0]?.image);
-  console.log('Sample Team Image:', INITIAL_DATA.team[0]?.image);
-  
-  localStorage.setItem(STORAGE_KEYS.PROGRAMS, JSON.stringify(INITIAL_DATA.programs));
-  localStorage.setItem(STORAGE_KEYS.TESTIMONIALS, JSON.stringify(INITIAL_DATA.testimonials));
-  localStorage.setItem(STORAGE_KEYS.BLOG, JSON.stringify(INITIAL_DATA.blog));
-  localStorage.setItem(STORAGE_KEYS.GALLERY, JSON.stringify(INITIAL_DATA.gallery));
-  localStorage.setItem(STORAGE_KEYS.TEAM, JSON.stringify(INITIAL_DATA.team));
-  localStorage.setItem(STORAGE_KEYS.ABOUT, JSON.stringify(INITIAL_DATA.about));
-  localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
-  
-  console.log('✅ Admin data re-initialized successfully!');
-  console.log('📊 Data counts:', {
-    programs: INITIAL_DATA.programs.length,
-    testimonials: INITIAL_DATA.testimonials.length,
-    blog: INITIAL_DATA.blog.length,
-    gallery: INITIAL_DATA.gallery.length,
-    team: INITIAL_DATA.team.length
-  });
-  
-  return true;
+/** Replace a whole section. Throws an Error with a readable message on failure. */
+export async function saveSection(section: SectionKey, value: any) {
+  const { error } = await supabase.from(TABLE).upsert(
+    {
+      section,
+      data: encodeAssets(value),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'section' }
+  );
+  if (error) {
+    throw new Error(describeError(error));
+  }
+  cache.set(section, Promise.resolve(value));
 }
 
-// Reset all admin data
-export function resetAdminData() {
-  localStorage.removeItem(STORAGE_KEYS.PROGRAMS);
-  localStorage.removeItem(STORAGE_KEYS.TESTIMONIALS);
-  localStorage.removeItem(STORAGE_KEYS.BLOG);
-  localStorage.removeItem(STORAGE_KEYS.GALLERY);
-  localStorage.removeItem(STORAGE_KEYS.TEAM);
-  localStorage.removeItem(STORAGE_KEYS.ABOUT);
-  localStorage.removeItem(STORAGE_KEYS.INITIALIZED);
-  console.log('🗑️ All admin data cleared');
+/** Put the original launch content back for one section. */
+export async function restoreSectionDefaults(section: SectionKey) {
+  await saveSection(section, defaultsFor(section));
 }
 
-// Get data
-export function getPrograms() {
-  const data = localStorage.getItem(STORAGE_KEYS.PROGRAMS);
-  return data ? JSON.parse(data) : INITIAL_DATA.programs;
-}
-
-export function getTestimonials() {
-  const data = localStorage.getItem(STORAGE_KEYS.TESTIMONIALS);
-  return data ? JSON.parse(data) : INITIAL_DATA.testimonials;
-}
-
-export function getBlogPosts() {
-  const data = localStorage.getItem(STORAGE_KEYS.BLOG);
-  return data ? JSON.parse(data) : INITIAL_DATA.blog;
-}
-
-export function getGalleryImages() {
-  const data = localStorage.getItem(STORAGE_KEYS.GALLERY);
-  return data ? JSON.parse(data) : INITIAL_DATA.gallery;
-}
-
-export function getTeamMembers() {
-  const data = localStorage.getItem(STORAGE_KEYS.TEAM);
-  return data ? JSON.parse(data) : INITIAL_DATA.team;
-}
-
-export function getAboutInfo() {
-  const data = localStorage.getItem(STORAGE_KEYS.ABOUT);
-  return data ? JSON.parse(data) : INITIAL_DATA.about;
-}
-
-// Save data
-export function savePrograms(programs: any[]) {
-  localStorage.setItem(STORAGE_KEYS.PROGRAMS, JSON.stringify(programs));
-}
-
-export function saveTestimonials(testimonials: any[]) {
-  localStorage.setItem(STORAGE_KEYS.TESTIMONIALS, JSON.stringify(testimonials));
-}
-
-export function saveBlogPosts(posts: any[]) {
-  localStorage.setItem(STORAGE_KEYS.BLOG, JSON.stringify(posts));
-}
-
-export function saveGalleryImages(images: any[]) {
-  localStorage.setItem(STORAGE_KEYS.GALLERY, JSON.stringify(images));
-}
-
-export function saveTeamMembers(team: any[]) {
-  localStorage.setItem(STORAGE_KEYS.TEAM, JSON.stringify(team));
-}
-
-export function saveAboutInfo(about: any) {
-  localStorage.setItem(STORAGE_KEYS.ABOUT, JSON.stringify(about));
-}
-
-// Delete specific item
-export function deleteProgram(id: string) {
-  const programs = getPrograms().filter((p: any) => p.id !== id);
-  savePrograms(programs);
-}
-
-export function deleteTestimonial(id: string) {
-  const testimonials = getTestimonials().filter((t: any) => t.id !== id);
-  saveTestimonials(testimonials);
-}
-
-export function deleteBlogPost(id: string) {
-  const posts = getBlogPosts().filter((p: any) => p.id !== id);
-  saveBlogPosts(posts);
-}
-
-export function deleteGalleryImage(id: string) {
-  const images = getGalleryImages().filter((i: any) => i.id !== id);
-  saveGalleryImages(images);
-}
-
-export function deleteTeamMember(id: string) {
-  const team = getTeamMembers().filter((m: any) => m.id !== id);
-  saveTeamMembers(team);
-}
-
-// Add or update item
-export function saveProgram(program: any) {
-  const programs = getPrograms();
-  const index = programs.findIndex((p: any) => p.id === program.id);
-  
+async function upsertItem(section: SectionKey, item: any) {
+  const items: any[] = await loadSection(section, true);
+  const index = items.findIndex((existing) => existing.id === item.id);
   if (index >= 0) {
-    programs[index] = program;
+    items[index] = item;
   } else {
-    programs.push(program);
+    items.push(item);
   }
-  
-  savePrograms(programs);
+  await saveSection(section, items);
 }
 
-export function saveTestimonial(testimonial: any) {
-  const testimonials = getTestimonials();
-  const index = testimonials.findIndex((t: any) => t.id === testimonial.id);
-  
-  if (index >= 0) {
-    testimonials[index] = testimonial;
-  } else {
-    testimonials.push(testimonial);
-  }
-  
-  saveTestimonials(testimonials);
+async function removeItem(section: SectionKey, id: string) {
+  const items: any[] = await loadSection(section, true);
+  await saveSection(section, items.filter((item) => item.id !== id));
 }
 
-export function saveBlogPost(post: any) {
-  const posts = getBlogPosts();
-  const index = posts.findIndex((p: any) => p.id === post.id);
-  
-  if (index >= 0) {
-    posts[index] = post;
-  } else {
-    posts.push(post);
-  }
-  
-  saveBlogPosts(posts);
-}
+// Read
+export const getPrograms = (fresh = false) => loadSection('programs', fresh);
+export const getTestimonials = (fresh = false) => loadSection('testimonials', fresh);
+export const getBlogPosts = (fresh = false) => loadSection('blog', fresh);
+export const getGalleryImages = (fresh = false) => loadSection('gallery', fresh);
+export const getTeamMembers = (fresh = false) => loadSection('team', fresh);
+export const getAboutInfo = (fresh = false) => loadSection('about', fresh);
 
-export function saveGalleryImage(image: any) {
-  const images = getGalleryImages();
-  const index = images.findIndex((i: any) => i.id === image.id);
-  
-  if (index >= 0) {
-    images[index] = image;
-  } else {
-    images.push(image);
-  }
-  
-  saveGalleryImages(images);
-}
+// Replace whole sections
+export const savePrograms = (programs: any[]) => saveSection('programs', programs);
+export const saveTestimonials = (testimonials: any[]) => saveSection('testimonials', testimonials);
+export const saveBlogPosts = (posts: any[]) => saveSection('blog', posts);
+export const saveGalleryImages = (images: any[]) => saveSection('gallery', images);
+export const saveTeamMembers = (team: any[]) => saveSection('team', team);
+export const saveAboutInfo = (about: any) => saveSection('about', about);
 
-export function saveTeamMember(member: any) {
-  const team = getTeamMembers();
-  const index = team.findIndex((m: any) => m.id === member.id);
-  
-  if (index >= 0) {
-    team[index] = member;
-  } else {
-    team.push(member);
-  }
-  
-  saveTeamMembers(team);
-}
+// Add or update one item
+export const saveProgram = (program: any) => upsertItem('programs', program);
+export const saveTestimonial = (testimonial: any) => upsertItem('testimonials', testimonial);
+export const saveBlogPost = (post: any) => upsertItem('blog', post);
+export const saveGalleryImage = (image: any) => upsertItem('gallery', image);
+export const saveTeamMember = (member: any) => upsertItem('team', member);
+
+// Delete one item
+export const deleteProgram = (id: string) => removeItem('programs', id);
+export const deleteTestimonial = (id: string) => removeItem('testimonials', id);
+export const deleteBlogPost = (id: string) => removeItem('blog', id);
+export const deleteGalleryImage = (id: string) => removeItem('gallery', id);
+export const deleteTeamMember = (id: string) => removeItem('team', id);
+

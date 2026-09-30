@@ -70,19 +70,23 @@ export function ProgramsSection() {
   ];
 
   useEffect(() => {
-    const storedPrograms = getPrograms();
-    
-    // Merge stored programs with default icons
-    const mergedPrograms = storedPrograms.map((prog: any, index: number) => {
-      const defaultIcon = index === 0 ? Users : index === 1 ? GraduationCap : Sparkles;
-      
-      return {
-        ...prog,
-        icon: typeof prog.icon === 'string' ? prog.icon : defaultIcon
-      };
+    let active = true;
+    getPrograms().then((storedPrograms) => {
+      if (!active) return;
+
+      // Merge stored programs with default icons
+      const mergedPrograms = storedPrograms.map((prog: any, index: number) => {
+        const defaultIcon = index === 0 ? Users : index === 1 ? GraduationCap : Sparkles;
+
+        return {
+          ...prog,
+          icon: typeof prog.icon === 'string' ? prog.icon : defaultIcon
+        };
+      });
+
+      setPrograms(mergedPrograms.length > 0 ? mergedPrograms : defaultPrograms);
     });
-    
-    setPrograms(mergedPrograms.length > 0 ? mergedPrograms : defaultPrograms);
+    return () => { active = false; };
   }, []);
 
   return (

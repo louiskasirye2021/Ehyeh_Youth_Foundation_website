@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, Eye, EyeOff, LogIn } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, LogIn } from 'lucide-react';
 import logo from 'figma:asset/4ecad429389694574aea2121c507d8e3e7142ef3.png';
+import { supabase } from '../lib/supabase';
 
-interface AdminLoginProps {
-  onLogin: (token: string) => void;
-}
-
-export function AdminLogin({ onLogin }: AdminLoginProps) {
-  const [pin, setPin] = useState('');
-  const [showPin, setShowPin] = useState(false);
+// Sign-in is handled by Supabase Auth. Once signed in, App.tsx picks up the
+// session automatically and shows the dashboard.
+export function AdminLogin() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -19,18 +19,20 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
     setLoading(true);
 
     try {
-      // For demo purposes, using a simple PIN authentication
-      // In production, this should use proper authentication
-      if (pin === 'EYF@2026') {
-        // Generate a simple token
-        const token = btoa(`admin:${Date.now()}`);
-        localStorage.setItem('eyf_admin_token', token);
-        onLogin(token);
-      } else {
-        setError('Invalid PIN. Please try again.');
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (signInError) {
+        setError(
+          /invalid login credentials/i.test(signInError.message)
+            ? 'Email or password is incorrect.'
+            : signInError.message
+        );
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+    } catch {
+      setError('Could not reach the server. Check your internet connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -58,28 +60,51 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="pin" className="block text-sm text-gray-700 mb-2">
-              Administrator PIN
+            <label htmlFor="email" className="block text-sm text-gray-700 mb-2">
+              Email
+            </label>
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                <Mail size={20} className="text-gray-400" />
+              </div>
+              <input
+                type="email"
+                id="email"
+                autoComplete="username"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 focus:border-[#C39223] focus:outline-none transition-colors"
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm text-gray-700 mb-2">
+              Password
             </label>
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2">
                 <Lock size={20} className="text-gray-400" />
               </div>
               <input
-                type={showPin ? 'text' : 'password'}
-                id="pin"
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full pl-12 pr-12 py-3 rounded-xl border border-gray-300 focus:border-[#C39223] focus:outline-none transition-colors"
-                placeholder="Enter your PIN"
+                placeholder="Enter your password"
                 required
               />
               <button
                 type="button"
-                onClick={() => setShowPin(!showPin)}
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                {showPin ? <EyeOff size={20} /> : <Eye size={20} />}
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
@@ -100,10 +125,10 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
             className="w-full bg-[#C39223] text-white py-3 rounded-full hover:bg-[#b08520] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
-              <span>Authenticating...</span>
+              <span>Signing in…</span>
             ) : (
               <>
-                <span>Login</span>
+                <span>Sign in</span>
                 <LogIn size={18} />
               </>
             )}

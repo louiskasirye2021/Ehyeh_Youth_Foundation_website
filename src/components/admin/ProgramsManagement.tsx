@@ -7,6 +7,7 @@ import {
   saveProgram,
   deleteProgram
 } from '../../utils/adminStorage';
+import { handleFileUpload } from '../../utils/imageUpload';
 
 export function ProgramsManagement() {
   const [programs, setPrograms] = useState<any[]>([]);
@@ -25,13 +26,19 @@ export function ProgramsManagement() {
     loadPrograms();
   }, []);
 
-  const loadPrograms = () => {
-    const data = getPrograms();
+  const [saving, setSaving] = useState(false);
+
+  const loadPrograms = async () => {
+    const data = await getPrograms(true);
     setPrograms(data);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // Keep the fields this form doesn't edit (modules, sub-programs, full
+    // description, etc.). Previously saving an edit silently deleted them.
+    const existing = programs.find((p) => p.id === formData.id) || {};
     const program = {
+      ...existing,
       id: formData.id || Date.now().toString(),
       title: formData.title,
       subtitle: formData.subtitle,
@@ -40,26 +47,37 @@ export function ProgramsManagement() {
       image: formData.image
     };
 
-    saveProgram(program);
-    loadPrograms();
-    setEditingId(null);
-    setFormData({
-      id: '',
-      title: '',
-      subtitle: '',
-      description: '',
-      icon: '',
-      image: ''
-    });
-    toast.success('Program saved successfully!');
+    setSaving(true);
+    try {
+      await saveProgram(program);
+      await loadPrograms();
+      setEditingId(null);
+      setFormData({
+        id: '',
+        title: '',
+        subtitle: '',
+        description: '',
+        icon: '',
+        image: ''
+      });
+      toast.success('Program saved. It is now live on the website.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not save the program.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this program?')) return;
 
-    deleteProgram(id);
-    loadPrograms();
-    toast.success('Program deleted successfully!');
+    try {
+      await deleteProgram(id);
+      await loadPrograms();
+      toast.success('Program deleted.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not delete the program.');
+    }
   };
 
   const startEdit = (program?: any) => {
@@ -93,24 +111,10 @@ export function ProgramsManagement() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      handleFileUpload(file, (dataUrl) => {
-        setFormData({ ...formData, image: dataUrl });
+      handleFileUpload(file, (url) => {
+        setFormData((prev) => ({ ...prev, image: url }));
       });
     }
-  };
-
-  const handleFileUpload = (file: File, callback: (dataUrl: string) => void) => {
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size should be less than 5MB');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      callback(reader.result as string);
-    };
-    reader.readAsDataURL(file);
   };
 
   return (
@@ -498,7 +502,8 @@ export function ProgramsManagement() {
             <div className="flex gap-4 pt-4">
               <button
                 onClick={() => handleSave()}
-                className="flex-1 bg-[#C39223] text-white px-6 py-3 rounded-full hover:bg-[#b08520] transition-all flex items-center justify-center gap-2"
+                disabled={saving}
+                className="flex-1 bg-[#C39223] text-white px-6 py-3 rounded-full hover:bg-[#b08520] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save size={20} />
                 <span>Save Program</span>

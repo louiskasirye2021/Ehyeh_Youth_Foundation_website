@@ -23,12 +23,14 @@ export function TeamManagement() {
     loadMembers();
   }, []);
 
-  const loadMembers = () => {
-    const data = getTeamMembers();
+  const [saving, setSaving] = useState(false);
+
+  const loadMembers = async () => {
+    const data = await getTeamMembers(true);
     setMembers(data);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const member = {
       id: formData.id || Date.now().toString(),
       name: formData.name,
@@ -36,19 +38,30 @@ export function TeamManagement() {
       image: formData.image
     };
 
-    saveTeamMember(member);
-    loadMembers();
-    setEditingId(null);
-    resetForm();
-    toast.success('Team member saved successfully!');
+    setSaving(true);
+    try {
+      await saveTeamMember(member);
+      await loadMembers();
+      setEditingId(null);
+      resetForm();
+      toast.success('Team member saved. It is now live on the website.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not save the team member.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this team member?')) return;
 
-    deleteTeamMember(id);
-    loadMembers();
-    toast.success('Team member deleted successfully!');
+    try {
+      await deleteTeamMember(id);
+      await loadMembers();
+      toast.success('Team member deleted.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not delete the team member.');
+    }
   };
 
   const startEdit = (member?: any) => {
@@ -161,7 +174,7 @@ export function TeamManagement() {
                   const file = e.target.files?.[0];
                   if (file) {
                     handleFileUpload(file, (dataUrl) => {
-                      setFormData({ ...formData, image: dataUrl });
+                      setFormData((prev) => ({ ...prev, image: dataUrl }));
                     });
                   }
                 }}
@@ -206,7 +219,8 @@ export function TeamManagement() {
             <div className="flex gap-4 pt-4">
               <button
                 onClick={() => handleSave()}
-                className="flex-1 bg-[#C39223] text-white px-6 py-3 rounded-full hover:bg-[#b08520] transition-all flex items-center justify-center gap-2"
+                disabled={saving}
+                className="flex-1 bg-[#C39223] text-white px-6 py-3 rounded-full hover:bg-[#b08520] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save size={20} />
                 <span>Save Member</span>

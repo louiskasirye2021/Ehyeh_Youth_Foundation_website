@@ -20,14 +20,18 @@ export function BlogSection() {
   const [blogPosts, setBlogPosts] = useState<any[]>([]);
 
   useEffect(() => {
-    const storedPosts = getBlogPosts();
-    // Map the content field to fullContent for compatibility with BlogModal
-    const mappedPosts = storedPosts.map((post: any) => ({
-      ...post,
-      fullContent: post.content || post.fullContent || post.excerpt,
-      author: post.author || 'EYF Team'
-    }));
-    setBlogPosts(mappedPosts);
+    let active = true;
+    getBlogPosts().then((storedPosts) => {
+      if (!active) return;
+      // Map the content field to fullContent for compatibility with BlogModal
+      const mappedPosts = storedPosts.map((post: any) => ({
+        ...post,
+        fullContent: post.content || post.fullContent || post.excerpt,
+        author: post.author || 'EYF Team'
+      }));
+      setBlogPosts(mappedPosts);
+    });
+    return () => { active = false; };
   }, []);
 
   return (

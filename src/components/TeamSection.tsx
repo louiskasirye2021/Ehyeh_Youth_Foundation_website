@@ -15,10 +15,16 @@ export function TeamSection() {
   });
 
   const [team, setTeam] = useState<any[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const storedTeam = getTeamMembers();
-    setTeam(storedTeam);
+    let active = true;
+    getTeamMembers().then((storedTeam) => {
+      if (!active) return;
+      setTeam(storedTeam);
+      setLoaded(true);
+    });
+    return () => { active = false; };
   }, []);
 
   return (
@@ -45,7 +51,9 @@ export function TeamSection() {
           </div>
 
           {/* Team Grid */}
-          {team.length === 0 ? (
+          {!loaded ? (
+            <div className="min-h-[20rem]" aria-busy="true" />
+          ) : team.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-gray-500 text-lg">No team members listed yet.</p>
               <p className="text-gray-400 text-sm mt-2">Team members will appear here once added by the administrator.</p>

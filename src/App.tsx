@@ -16,24 +16,30 @@ import { FAQ } from './pages/FAQ';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
 import { Toaster } from './components/ui/sonner';
-import { initializeAdminData } from './utils/adminStorage';
+import { supabase } from './lib/supabase';
+import type { Session } from '@supabase/supabase-js';
 import './styles/globals.css';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home');
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
-  // Initialize admin data immediately on app load
-  initializeAdminData();
+  // Keep track of whether an admin is signed in (Supabase Auth).
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setAuthChecked(true);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
-
-    // Check if admin is already authenticated
-    const token = localStorage.getItem('eyf_admin_token');
-    if (token) {
-      setIsAdminAuthenticated(true);
-    }
-
     // Handle hash-based routing
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1); // Remove the '#'
@@ -58,13 +64,8 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  const handleAdminLogin = (token: string) => {
-    setIsAdminAuthenticated(true);
-  };
-
-  const handleAdminLogout = () => {
-    localStorage.removeItem('eyf_admin_token');
-    setIsAdminAuthenticated(false);
+  const handleAdminLogout = async () => {
+    await supabase.auth.signOut();
     window.location.hash = '/';
   };
 
@@ -82,10 +83,20 @@ export default function App() {
   }
 
   if (currentPage === 'admin') {
-    if (!isAdminAuthenticated) {
-      return <AdminLogin onLogin={handleAdminLogin} />;
-    }
-    return <AdminDashboard onLogout={handleAdminLogout} />;
+    return (
+      <>
+        {!authChecked ? (
+          <div className="min-h-screen flex items-center justify-center text-gray-600">
+            Checking sign-in…
+          </div>
+        ) : session ? (
+          <AdminDashboard onLogout={handleAdminLogout} />
+        ) : (
+          <AdminLogin />
+        )}
+        <Toaster position="top-right" />
+      </>
+    );
   }
 
   return (

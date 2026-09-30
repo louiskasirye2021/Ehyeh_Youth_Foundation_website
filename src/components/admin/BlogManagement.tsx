@@ -27,12 +27,14 @@ export function BlogManagement() {
     loadPosts();
   }, []);
 
-  const loadPosts = () => {
-    const data = getBlogPosts();
+  const [saving, setSaving] = useState(false);
+
+  const loadPosts = async () => {
+    const data = await getBlogPosts(true);
     setPosts(data);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const post = {
       id: formData.id || Date.now().toString(),
       title: formData.title,
@@ -44,19 +46,30 @@ export function BlogManagement() {
       readTime: formData.readTime
     };
 
-    saveBlogPost(post);
-    loadPosts();
-    setEditingId(null);
-    resetForm();
-    toast.success('Blog post saved successfully!');
+    setSaving(true);
+    try {
+      await saveBlogPost(post);
+      await loadPosts();
+      setEditingId(null);
+      resetForm();
+      toast.success('Post saved. It is now live on the website.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not save the post.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this blog post?')) return;
 
-    deleteBlogPost(id);
-    loadPosts();
-    toast.success('Blog post deleted successfully!');
+    try {
+      await deleteBlogPost(id);
+      await loadPosts();
+      toast.success('Post deleted.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not delete the post.');
+    }
   };
 
   const startEdit = (post?: any) => {
@@ -263,7 +276,7 @@ export function BlogManagement() {
                   const file = e.target.files?.[0];
                   if (file) {
                     handleFileUpload(file, (dataUrl) => {
-                      setFormData({ ...formData, image: dataUrl });
+                      setFormData((prev) => ({ ...prev, image: dataUrl }));
                     });
                   }
                 }}
@@ -308,7 +321,8 @@ export function BlogManagement() {
             <div className="flex gap-4 pt-4">
               <button
                 onClick={() => handleSave()}
-                className="flex-1 bg-[#C39223] text-white px-6 py-3 rounded-full hover:bg-[#b08520] transition-all flex items-center justify-center gap-2"
+                disabled={saving}
+                className="flex-1 bg-[#C39223] text-white px-6 py-3 rounded-full hover:bg-[#b08520] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save size={20} />
                 <span>Save Post</span>

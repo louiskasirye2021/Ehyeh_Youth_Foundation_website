@@ -22,9 +22,11 @@ export function GallerySection() {
   const [images, setImages] = useState<any[]>([]);
 
   useEffect(() => {
-    const storedImages = getGalleryImages();
-    console.log('📸 Gallery: Loading images from storage...', storedImages.length, 'images found');
-    setImages(storedImages);
+    let active = true;
+    getGalleryImages().then((storedImages) => {
+      if (active) setImages(storedImages);
+    });
+    return () => { active = false; };
   }, []);
 
   // Auto-slide functionality
