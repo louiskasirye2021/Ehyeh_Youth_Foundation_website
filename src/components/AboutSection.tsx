@@ -2,8 +2,8 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { Target, Eye, Heart, Users } from 'lucide-react';
 import { AbstractShapes } from './AbstractShapes';
-import { useState, useEffect } from 'react';
-import { getAboutInfo } from '../utils/adminStorage';
+import { useSiteContent } from '../content/store';
+import { RichText } from './RichText';
 
 export function AboutSection() {
   const [ref, inView] = useInView({
@@ -11,27 +11,7 @@ export function AboutSection() {
     threshold: 0.1,
   });
 
-  const [aboutInfo, setAboutInfo] = useState<any>({
-    mission: '',
-    vision: ''
-  });
-
-  useEffect(() => {
-    let active = true;
-    getAboutInfo().then((storedAbout) => {
-      if (!active) return;
-      if (storedAbout && (storedAbout.mission || storedAbout.vision)) {
-        setAboutInfo(storedAbout);
-      } else {
-        // Fallback to default values if not set
-        setAboutInfo({
-          mission: 'To inspire and empower young minds, fostering personal growth, leadership skills, and a sense of community, while providing opportunities for education, mentorship, and positive impact thereby shaping a resilient and forward-thinking generation.',
-          vision: 'We envision a world where every young person is equipped with the knowledge, skills, and confidence to lead transformative change—creating a future defined by innovation, compassion, and shared prosperity across communities globally.'
-        });
-      }
-    });
-    return () => { active = false; };
-  }, []);
+  const { about: aboutInfo } = useSiteContent().content;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -95,10 +75,10 @@ export function AboutSection() {
           {/* Section Header */}
           <motion.div variants={itemVariants} className="text-center">
             <div className="inline-block mb-4">
-              <span className="text-[#C39223] uppercase tracking-widest text-sm">Who We Are</span>
+              <span className="text-[#C39223] uppercase tracking-widest text-sm">{aboutInfo.label}</span>
               <div className="h-1 w-20 bg-[#C39223] mt-2 mx-auto"></div>
             </div>
-            <h2 className="text-4xl md:text-5xl lg:text-6xl text-black">About Us</h2>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl text-black">{aboutInfo.title}</h2>
           </motion.div>
 
           {/* Background */}
@@ -106,20 +86,12 @@ export function AboutSection() {
             <div className="bg-gray-50 rounded-3xl p-8 md:p-12 shadow-lg">
               <h3 className="text-2xl md:text-3xl text-black mb-6 flex items-center gap-3">
                 <Heart className="text-[#C39223]" size={32} />
-                Background
+                {aboutInfo.backgroundTitle}
               </h3>
-              <p className="text-gray-700 leading-relaxed text-lg">
-                The Ehyeh Youth Foundation (E.Y.F) is a non-profit organization committed to uplifting and 
-                empowering young people by providing them with the tools, guidance, and opportunities needed 
-                to thrive in an ever-changing world. Founded on the belief that every young person possesses 
-                untapped potential, E.Y.F aims to bridge gaps in education, mentorship, and skills development, 
-                ensuring that no youth is left behind due to lack of access or resources.
-              </p>
-              <p className="text-gray-700 leading-relaxed text-lg mt-4">
-                With programs designed to nurture holistic growth—spanning emotional, intellectual, social, and 
-                vocational development—E.Y.F is dedicated to creating sustainable pathways for youth to realize 
-                their dreams and contribute meaningfully to their communities.
-              </p>
+              <RichText
+                text={aboutInfo.background}
+                className="text-gray-700 leading-relaxed text-lg space-y-4"
+              />
             </div>
           </motion.div>
 
@@ -139,11 +111,12 @@ export function AboutSection() {
                   <div className="w-14 h-14 bg-[#C39223] rounded-2xl flex items-center justify-center">
                     <Target size={28} />
                   </div>
-                  <h3 className="text-2xl md:text-3xl">Mission</h3>
+                  <h3 className="text-2xl md:text-3xl">{aboutInfo.missionTitle}</h3>
                 </div>
-                <p className="text-gray-300 leading-relaxed text-lg">
-                  {aboutInfo.mission}
-                </p>
+                <RichText
+                  text={aboutInfo.mission}
+                  className="text-gray-300 leading-relaxed text-lg space-y-4"
+                />
               </div>
             </motion.div>
 
@@ -158,11 +131,12 @@ export function AboutSection() {
                   <div className="w-14 h-14 bg-black rounded-2xl flex items-center justify-center">
                     <Eye size={28} className="text-[#C39223]" />
                   </div>
-                  <h3 className="text-2xl md:text-3xl">Vision</h3>
+                  <h3 className="text-2xl md:text-3xl">{aboutInfo.visionTitle}</h3>
                 </div>
-                <p className="text-white/95 leading-relaxed text-lg">
-                  {aboutInfo.vision}
-                </p>
+                <RichText
+                  text={aboutInfo.vision}
+                  className="text-white/95 leading-relaxed text-lg space-y-4"
+                />
               </div>
             </motion.div>
           </motion.div>

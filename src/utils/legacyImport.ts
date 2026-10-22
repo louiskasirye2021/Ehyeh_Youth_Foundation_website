@@ -1,11 +1,13 @@
 import { supabase, IMAGE_BUCKET } from '../lib/supabase';
-import { saveSection, type SectionKey } from './adminStorage';
+import { saveSection } from '../content/store';
+
+type LegacySection = 'programs' | 'testimonials' | 'blog' | 'gallery' | 'team' | 'about';
 
 // The old admin panel saved edits only in the browser it was used in
 // (localStorage). These helpers find those edits and copy them to the live
 // database, uploading any embedded images to Storage on the way.
 
-const LEGACY_KEYS: Record<SectionKey, string> = {
+const LEGACY_KEYS: Record<LegacySection, string> = {
   programs: 'eyf_admin_programs',
   testimonials: 'eyf_admin_testimonials',
   blog: 'eyf_admin_blog',
@@ -16,10 +18,10 @@ const LEGACY_KEYS: Record<SectionKey, string> = {
 
 const OTHER_LEGACY_KEYS = ['eyf_admin_initialized', 'eyf_admin_token'];
 
-export function findLegacyEdits(): Partial<Record<SectionKey, any>> {
-  const found: Partial<Record<SectionKey, any>> = {};
+export function findLegacyEdits(): Partial<Record<LegacySection, any>> {
+  const found: Partial<Record<LegacySection, any>> = {};
   try {
-    for (const [section, key] of Object.entries(LEGACY_KEYS) as [SectionKey, string][]) {
+    for (const [section, key] of Object.entries(LEGACY_KEYS) as [LegacySection, string][]) {
       const raw = localStorage.getItem(key);
       if (!raw) continue;
       try {
@@ -77,8 +79,8 @@ async function moveEmbeddedImages(value: any): Promise<any> {
 }
 
 /** Copies every section found in this browser to the live site. */
-export async function publishLegacyEdits(edits: Partial<Record<SectionKey, any>>) {
-  for (const [section, data] of Object.entries(edits) as [SectionKey, any][]) {
+export async function publishLegacyEdits(edits: Partial<Record<LegacySection, any>>) {
+  for (const [section, data] of Object.entries(edits) as [LegacySection, any][]) {
     const cleaned = await moveEmbeddedImages(data);
     await saveSection(section, cleaned);
   }

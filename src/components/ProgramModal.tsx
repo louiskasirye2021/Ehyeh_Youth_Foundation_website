@@ -1,58 +1,29 @@
-import { X, CheckCircle, Users, Clock, Target, Brain, Heart, Lightbulb, HandHeart } from 'lucide-react';
+import { X, CheckCircle, Users, Clock, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-
-interface CorePillar {
-  title: string;
-  elements: string[];
-}
-
-interface SubProgram {
-  name: string;
-  desc: string;
-  duration?: string;
-  format?: string;
-  groupSize?: string;
-  ageRange?: string;
-  objectives?: string[];
-  weeklyModules?: string[];
-  corePillars?: CorePillar[];
-  outcomes?: string[];
-}
+import { ProgramIcon } from './ProgramIcon';
+import { RichText } from './RichText';
 
 interface ProgramModalProps {
   isOpen: boolean;
   onClose: () => void;
-  program: {
-    icon: React.ComponentType<{ size: number; className?: string }>;
-    title: string;
-    subtitle?: string;
-    description: string;
-    fullDescription?: string;
-    image: string;
-    modules: string[];
-    subPrograms?: SubProgram[];
-    target?: string;
-    goal?: string;
-    acronym?: {
-      F: string;
-      R: string;
-      E: string;
-      E2: string;
-      D: string;
-    };
-    promises?: {
-      toParents: string;
-      toMentees: string;
-      toCommunity: string;
-    };
-  } | null;
+  program: any | null;
+  index: number;
 }
 
-export function ProgramModal({ isOpen, onClose, program }: ProgramModalProps) {
+const PROMISE_STYLES = [
+  'bg-gradient-to-br from-blue-50 to-white border border-blue-100',
+  'bg-gradient-to-br from-[#C39223]/10 to-white border border-[#C39223]/20',
+  'bg-gradient-to-br from-green-50 to-white border border-green-100',
+];
+
+export function ProgramModal({ isOpen, onClose, program, index }: ProgramModalProps) {
   if (!program) return null;
 
-  const Icon = program.icon;
+  const subPrograms: any[] = program.subPrograms || [];
+  const acronym: any[] = program.acronym || [];
+  const promises: any[] = program.promises || [];
+  const modules: string[] = program.modules || [];
 
   return (
     <AnimatePresence>
@@ -98,7 +69,7 @@ export function ProgramModal({ isOpen, onClose, program }: ProgramModalProps) {
                 <div className="absolute bottom-6 left-6 right-6">
                   <div className="flex items-start gap-4">
                     <div className="w-16 h-16 bg-[#C39223] rounded-2xl flex items-center justify-center flex-shrink-0">
-                      <Icon size={32} className="text-white" />
+                      <ProgramIcon icon={program.icon} index={index} size={32} />
                     </div>
                     <div>
                       <h2 className="text-3xl md:text-4xl text-white mb-2">{program.title}</h2>
@@ -115,14 +86,14 @@ export function ProgramModal({ isOpen, onClose, program }: ProgramModalProps) {
                 {/* Description */}
                 <div>
                   <h3 className="text-2xl text-black mb-4">Overview</h3>
-                  <p className="text-gray-700 leading-relaxed text-lg mb-4">
-                    {program.description}
-                  </p>
-                  {program.fullDescription && (
-                    <p className="text-gray-700 leading-relaxed">
-                      {program.fullDescription}
-                    </p>
-                  )}
+                  <RichText
+                    text={program.description}
+                    className="text-gray-700 leading-relaxed text-lg mb-4 space-y-4"
+                  />
+                  <RichText
+                    text={program.fullDescription}
+                    className="text-gray-700 leading-relaxed space-y-4"
+                  />
                 </div>
 
                 {/* Goal (for E1T1) */}
@@ -132,44 +103,38 @@ export function ProgramModal({ isOpen, onClose, program }: ProgramModalProps) {
                       <Target size={24} />
                       <h3 className="text-2xl">Our Goal</h3>
                     </div>
-                    <p className="text-lg">{program.goal}</p>
+                    <RichText text={program.goal} className="text-lg space-y-3" />
                   </div>
                 )}
 
-                {/* F.R.E.E.D Acronym */}
-                {program.acronym && (
+                {/* Acronym (e.g. F.R.E.E.D) */}
+                {acronym.length > 0 && (
                   <div>
-                    <h3 className="text-2xl text-black mb-4">What F.R.E.E.D Stands For</h3>
+                    {program.acronymTitle && (
+                      <h3 className="text-2xl text-black mb-4">{program.acronymTitle}</h3>
+                    )}
                     <div className="grid md:grid-cols-2 gap-4">
-                      <div className="bg-[#C39223]/10 rounded-xl p-4 border-l-4 border-[#C39223]">
-                        <span className="text-2xl text-[#C39223]">F</span>
-                        <span className="text-lg text-black ml-2">- {program.acronym.F}</span>
-                      </div>
-                      <div className="bg-[#C39223]/10 rounded-xl p-4 border-l-4 border-[#C39223]">
-                        <span className="text-2xl text-[#C39223]">R</span>
-                        <span className="text-lg text-black ml-2">- {program.acronym.R}</span>
-                      </div>
-                      <div className="bg-[#C39223]/10 rounded-xl p-4 border-l-4 border-[#C39223]">
-                        <span className="text-2xl text-[#C39223]">E</span>
-                        <span className="text-lg text-black ml-2">- {program.acronym.E}</span>
-                      </div>
-                      <div className="bg-[#C39223]/10 rounded-xl p-4 border-l-4 border-[#C39223]">
-                        <span className="text-2xl text-[#C39223]">E</span>
-                        <span className="text-lg text-black ml-2">- {program.acronym.E2}</span>
-                      </div>
-                      <div className="bg-[#C39223]/10 rounded-xl p-4 border-l-4 border-[#C39223] md:col-span-2">
-                        <span className="text-2xl text-[#C39223]">D</span>
-                        <span className="text-lg text-black ml-2">- {program.acronym.D}</span>
-                      </div>
+                      {acronym.map((entry, idx) => (
+                        <div
+                          key={entry.id || idx}
+                          className={`bg-[#C39223]/10 rounded-xl p-4 border-l-4 border-[#C39223] ${
+                            idx === acronym.length - 1 && acronym.length % 2 === 1 ? 'md:col-span-2' : ''
+                          }`}
+                        >
+                          <span className="text-2xl text-[#C39223]">{entry.letter}</span>
+                          <span className="text-lg text-black ml-2">- {entry.word}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
                 {/* Modules */}
+                {modules.length > 0 && (
                 <div>
                   <h3 className="text-2xl text-black mb-4">Key Modules & Focus Areas</h3>
                   <div className="grid md:grid-cols-2 gap-4">
-                    {program.modules.map((module, idx) => (
+                    {modules.map((module, idx) => (
                       <div
                         key={idx}
                         className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl hover:bg-[#C39223]/10 transition-colors"
@@ -181,18 +146,20 @@ export function ProgramModal({ isOpen, onClose, program }: ProgramModalProps) {
                   </div>
                 </div>
 
+                )}
+
                 {/* Sub-programs with detailed information */}
-                {program.subPrograms && program.subPrograms.length > 0 && (
+                {subPrograms.length > 0 && (
                   <div>
                     <h3 className="text-2xl text-black mb-4">Sub-Programs</h3>
                     <div className="space-y-6">
-                      {program.subPrograms.map((sub, idx) => (
+                      {subPrograms.map((sub, idx) => (
                         <div
-                          key={idx}
+                          key={sub.id || idx}
                           className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 border-2 border-gray-100 hover:border-[#C39223]/30 transition-colors"
                         >
                           <h4 className="text-xl text-black mb-3">{sub.name}</h4>
-                          <p className="text-gray-600 mb-4">{sub.desc}</p>
+                          <RichText text={sub.desc} className="text-gray-600 mb-4 space-y-3" />
                           
                           {/* Program Details Grid */}
                           {(sub.duration || sub.format || sub.groupSize || sub.ageRange) && (
@@ -237,7 +204,7 @@ export function ProgramModal({ isOpen, onClose, program }: ProgramModalProps) {
                           )}
 
                           {/* Objectives */}
-                          {sub.objectives && sub.objectives.length > 0 && (
+                          {sub.objectives?.length > 0 && (
                             <div className="mb-4">
                               <h5 className="text-sm text-black mb-2">Program Objectives:</h5>
                               <ul className="space-y-2">
@@ -252,7 +219,7 @@ export function ProgramModal({ isOpen, onClose, program }: ProgramModalProps) {
                           )}
 
                           {/* Core Pillars */}
-                          {sub.corePillars && sub.corePillars.length > 0 && (
+                          {sub.corePillars?.length > 0 && (
                             <div className="mb-4">
                               <h5 className="text-sm text-black mb-2">Core Pillars:</h5>
                               <div className="grid md:grid-cols-2 gap-2">
@@ -263,7 +230,7 @@ export function ProgramModal({ isOpen, onClose, program }: ProgramModalProps) {
                                   >
                                     <h6 className="text-sm text-black font-bold mb-1">{pillar.title}</h6>
                                     <ul className="space-y-1">
-                                      {pillar.elements.map((element, elementIdx) => (
+                                      {(pillar.elements || []).map((element, elementIdx) => (
                                         <li key={elementIdx} className="text-sm text-gray-600 flex items-start gap-2">
                                           <span className="text-[#C39223] mt-1">•</span>
                                           <span>{element}</span>
@@ -277,7 +244,7 @@ export function ProgramModal({ isOpen, onClose, program }: ProgramModalProps) {
                           )}
 
                           {/* Weekly Modules */}
-                          {sub.weeklyModules && sub.weeklyModules.length > 0 && (
+                          {sub.weeklyModules?.length > 0 && (
                             <div className="mb-4">
                               <h5 className="text-sm text-black mb-2">Weekly Mentorship Modules:</h5>
                               <div className="grid md:grid-cols-2 gap-2">
@@ -294,7 +261,7 @@ export function ProgramModal({ isOpen, onClose, program }: ProgramModalProps) {
                           )}
 
                           {/* Outcomes */}
-                          {sub.outcomes && sub.outcomes.length > 0 && (
+                          {sub.outcomes?.length > 0 && (
                             <div>
                               <h5 className="text-sm text-black mb-2">Expected Outcomes:</h5>
                               <ul className="space-y-2">
@@ -313,23 +280,22 @@ export function ProgramModal({ isOpen, onClose, program }: ProgramModalProps) {
                   </div>
                 )}
 
-                {/* Our Promises (for LMP) */}
-                {program.promises && (
+                {/* Promises */}
+                {promises.length > 0 && (
                   <div>
-                    <h3 className="text-2xl text-black mb-4">Our Promises</h3>
+                    {program.promisesTitle && (
+                      <h3 className="text-2xl text-black mb-4">{program.promisesTitle}</h3>
+                    )}
                     <div className="grid md:grid-cols-3 gap-4">
-                      <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border border-blue-100">
-                        <h4 className="text-lg text-black mb-2">To Parents</h4>
-                        <p className="text-sm text-gray-600">{program.promises.toParents}</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-[#C39223]/10 to-white rounded-2xl p-6 border border-[#C39223]/20">
-                        <h4 className="text-lg text-black mb-2">To Mentees</h4>
-                        <p className="text-sm text-gray-600">{program.promises.toMentees}</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-green-50 to-white rounded-2xl p-6 border border-green-100">
-                        <h4 className="text-lg text-black mb-2">To Community</h4>
-                        <p className="text-sm text-gray-600">{program.promises.toCommunity}</p>
-                      </div>
+                      {promises.map((promise, idx) => (
+                        <div
+                          key={promise.id || idx}
+                          className={`${PROMISE_STYLES[idx % PROMISE_STYLES.length]} rounded-2xl p-6`}
+                        >
+                          <h4 className="text-lg text-black mb-2">{promise.title}</h4>
+                          <p className="text-sm text-gray-600">{promise.text}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -339,7 +305,7 @@ export function ProgramModal({ isOpen, onClose, program }: ProgramModalProps) {
                   <div>
                     <h3 className="text-2xl text-black mb-4">Target Audience</h3>
                     <div className="bg-gradient-to-r from-black to-gray-800 text-white rounded-2xl p-6">
-                      <p className="text-lg">{program.target}</p>
+                      <RichText text={program.target} className="text-lg space-y-3" />
                     </div>
                   </div>
                 )}

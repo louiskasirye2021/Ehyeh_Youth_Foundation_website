@@ -1,14 +1,17 @@
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { Users, GraduationCap, Sparkles, ArrowRight, Target, Award, Calendar } from 'lucide-react';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Users, ArrowRight, Target, Award } from 'lucide-react';
 import { AbstractShapes } from './AbstractShapes';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ProgramModal } from './ProgramModal';
-import { getPrograms } from '../utils/adminStorage';
-import lmpImage from 'figma:asset/8af8190d680badaabb7f54acbd51ca364eaaeb27.png';
-import e1t1Image from 'figma:asset/8699283214e5eb50bfc25cdcc553639e00d46e71.png';
-import skillsHubImage from 'figma:asset/5a7810e8c401f85c9a1195afa79c11c7bd456836.png';
+import { ProgramIcon } from './ProgramIcon';
+import { useSiteContent } from '../content/store';
+
+const HIGHLIGHT_STYLES = [
+  { card: 'bg-black text-white', badge: 'bg-[#C39223]', icon: Target, iconClass: '', title: '', list: 'text-gray-300' },
+  { card: 'bg-[#C39223] text-white', badge: 'bg-black', icon: Users, iconClass: 'text-[#C39223]', title: '', list: 'text-white/95' },
+  { card: 'bg-white border-2 border-[#C39223]', badge: 'bg-[#C39223]', icon: Award, iconClass: 'text-white', title: 'text-black', list: 'text-gray-700' },
+];
 
 export function ProgramsSection() {
   const [ref, inView] = useInView({
@@ -17,77 +20,7 @@ export function ProgramsSection() {
   });
 
   const [selectedProgram, setSelectedProgram] = useState<number | null>(null);
-  const [programs, setPrograms] = useState<any[]>([]);
-
-  // Fallback hardcoded programs with icon components
-  const defaultPrograms = [
-    {
-      icon: Users,
-      title: 'Legacy Mentorship Program (LMP)',
-      subtitle: 'Changing their tomorrow today!!',
-      description: 'A comprehensive mentorship ecosystem designed to nurture and empower young people at every stage of their journey.',
-      image: lmpImage,
-      modules: [
-        'Self Awareness and building resilience',
-        'Mental Health and well-being',
-        'Life skills',
-        'Financial literacy',
-        'Civic engagement and social responsibility',
-        'Understanding diversity and global awareness'
-      ],
-      subPrograms: []
-    },
-    {
-      icon: GraduationCap,
-      title: 'E1T1 Education Fund',
-      subtitle: 'Each One Teach One',
-      description: 'Providing educational support and resources to talented students from underprivileged backgrounds.',
-      image: e1t1Image,
-      modules: [
-        'Scholarship programs',
-        'Academic mentorship',
-        'School supplies provision',
-        'Career guidance',
-        'University preparation'
-      ],
-      target: 'Talented students from underprivileged backgrounds'
-    },
-    {
-      icon: Sparkles,
-      title: 'F.R.E.D Skills Hub',
-      subtitle: 'Functional & Relevant Education',
-      description: 'Equipping young people with practical, market-relevant skills for immediate employment.',
-      image: skillsHubImage,
-      modules: [
-        'Digital literacy & tech skills',
-        'Entrepreneurship training',
-        'Vocational skills development',
-        'Business planning & management',
-        'Industry certifications'
-      ],
-      target: 'Youth seeking practical skills for employment'
-    }
-  ];
-
-  useEffect(() => {
-    let active = true;
-    getPrograms().then((storedPrograms) => {
-      if (!active) return;
-
-      // Merge stored programs with default icons
-      const mergedPrograms = storedPrograms.map((prog: any, index: number) => {
-        const defaultIcon = index === 0 ? Users : index === 1 ? GraduationCap : Sparkles;
-
-        return {
-          ...prog,
-          icon: typeof prog.icon === 'string' ? prog.icon : defaultIcon
-        };
-      });
-
-      setPrograms(mergedPrograms.length > 0 ? mergedPrograms : defaultPrograms);
-    });
-    return () => { active = false; };
-  }, []);
+  const { programs, programsSection } = useSiteContent().content;
 
   return (
     <section id="programs" className="py-24 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
@@ -108,9 +41,9 @@ export function ProgramsSection() {
               animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.6 }}
             >
-              <span className="text-[#C39223] uppercase tracking-widest text-sm">What We Do</span>
+              <span className="text-[#C39223] uppercase tracking-widest text-sm">{programsSection.label}</span>
               <div className="h-1 w-20 bg-[#C39223] mt-2 mx-auto mb-4"></div>
-              <h2 className="text-4xl md:text-5xl lg:text-6xl text-black">Programs & Initiatives</h2>
+              <h2 className="text-4xl md:text-5xl lg:text-6xl text-black">{programsSection.title}</h2>
             </motion.div>
           </div>
 
@@ -124,7 +57,7 @@ export function ProgramsSection() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
               {programs.map((program, index) => (
                 <motion.div
-                  key={index}
+                  key={program.id || index}
                   initial={{ opacity: 0, y: 30 }}
                   animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
                   transition={{ duration: 0.6, delay: index * 0.2 }}
@@ -146,11 +79,7 @@ export function ProgramsSection() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                       <div className="absolute bottom-4 left-4">
                         <div className="w-14 h-14 bg-[#C39223] rounded-2xl flex items-center justify-center">
-                          {typeof program.icon === 'string' ? (
-                            <span className="text-3xl">{program.icon}</span>
-                          ) : (
-                            <program.icon size={28} className="text-white" />
-                          )}
+                          <ProgramIcon icon={program.icon} index={index} size={28} />
                         </div>
                       </div>
                     </div>
@@ -165,6 +94,8 @@ export function ProgramsSection() {
 
                       {/* Modules */}
                       <div className="mb-6 flex-1">
+                        {program.modules.length > 0 && (
+                        <>
                         <h4 className="text-sm text-black mb-3">Key Modules:</h4>
                         <ul className="space-y-2">
                           {program.modules.slice(0, 3).map((module, idx) => (
@@ -174,14 +105,16 @@ export function ProgramsSection() {
                             </li>
                           ))}
                         </ul>
+                        </>
+                        )}
                       </div>
 
                       {/* Sub-programs or Target */}
-                      {program.subPrograms && (
+                      {program.subPrograms.length > 0 && (
                         <div className="mb-6 bg-gray-50 rounded-2xl p-4">
                           <h4 className="text-sm text-black mb-2">Sub-Programs:</h4>
                           {program.subPrograms.map((sub, idx) => (
-                            <div key={idx} className="text-sm mb-2">
+                            <div key={(sub as { id?: string }).id || idx} className="text-sm mb-2">
                               <span className="text-[#C39223]">{sub.name}</span>
                               <p className="text-gray-600 text-xs">{sub.desc}</p>
                             </div>
@@ -218,50 +151,23 @@ export function ProgramsSection() {
             transition={{ duration: 0.6, delay: 0.8 }}
             className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto"
           >
-            {/* Expected Outcomes */}
-            <div className="bg-black text-white rounded-3xl p-8 shadow-xl">
-              <div className="w-12 h-12 bg-[#C39223] rounded-2xl flex items-center justify-center mb-4">
-                <Target size={24} />
-              </div>
-              <h3 className="text-xl mb-4">Expected Outcomes</h3>
-              <ul className="space-y-2 text-sm text-gray-300">
-                <li>• Improved personal and professional development</li>
-                <li>• Increased access to quality education</li>
-                <li>• More young people kept in school</li>
-                <li>• Sustainable businesses by young entrepreneurs</li>
-                <li>• Vocational school & mentorship center</li>
-              </ul>
-            </div>
-
-            {/* Target Beneficiaries */}
-            <div className="bg-[#C39223] text-white rounded-3xl p-8 shadow-xl">
-              <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center mb-4">
-                <Users size={24} className="text-[#C39223]" />
-              </div>
-              <h3 className="text-xl mb-4">Target Beneficiaries</h3>
-              <ul className="space-y-2 text-sm text-white/95">
-                <li>• Children and youth in underprivileged communities</li>
-                <li>• Teenage mothers</li>
-                <li>• Aspiring youth-entrepreneurs</li>
-                <li>• Entry level employees & vacists</li>
-                <li>• Individuals seeking mentorship & coaching</li>
-              </ul>
-            </div>
-
-            {/* Sustainability Plan */}
-            <div className="bg-white border-2 border-[#C39223] rounded-3xl p-8 shadow-xl">
-              <div className="w-12 h-12 bg-[#C39223] rounded-2xl flex items-center justify-center mb-4">
-                <Award size={24} className="text-white" />
-              </div>
-              <h3 className="text-xl text-black mb-4">Sustainability</h3>
-              <ul className="space-y-2 text-sm text-gray-700">
-                <li>• Mentorship & coaching for entities</li>
-                <li>• Partnerships with local communities</li>
-                <li>• Annual fundraising events</li>
-                <li>• Vocational school & training center</li>
-                <li>• Income-generating projects</li>
-              </ul>
-            </div>
+            {programsSection.highlights.map((highlight, index) => {
+              const style = HIGHLIGHT_STYLES[index % HIGHLIGHT_STYLES.length];
+              const Icon = style.icon;
+              return (
+                <div key={highlight.id || index} className={`${style.card} rounded-3xl p-8 shadow-xl`}>
+                  <div className={`w-12 h-12 ${style.badge} rounded-2xl flex items-center justify-center mb-4`}>
+                    <Icon size={24} className={style.iconClass} />
+                  </div>
+                  <h3 className={`text-xl mb-4 ${style.title}`}>{highlight.title}</h3>
+                  <ul className={`space-y-2 text-sm ${style.list}`}>
+                    {highlight.items.map((item, i) => (
+                      <li key={i}>• {item}</li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
           </motion.div>
         </motion.div>
       </div>
@@ -271,6 +177,7 @@ export function ProgramsSection() {
         <ProgramModal
           isOpen={selectedProgram !== null}
           program={programs[selectedProgram]}
+          index={selectedProgram}
           onClose={() => setSelectedProgram(null)}
         />
       )}

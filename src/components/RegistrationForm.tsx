@@ -6,8 +6,10 @@ import { AbstractShapes } from './AbstractShapes';
 import { toast } from 'sonner@2.0.3';
 import emailjs from '@emailjs/browser';
 import { EMAILJS_CONFIG } from '../utils/emailConfig';
+import { useSiteContent } from '../content/store';
 
 export function RegistrationForm() {
+  const { registration, contact } = useSiteContent().content;
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.1,
@@ -57,7 +59,7 @@ export function RegistrationForm() {
     try {
       // Send email using EmailJS
       const templateParams = {
-        to_email: 'eyf.legacies@gmail.com',
+        to_email: contact.email,
         from_name: formData.fullName,
         from_email: formData.email,
         subject: 'New Program Registration - Ehyeh Youth Foundation',
@@ -130,11 +132,7 @@ export function RegistrationForm() {
     }));
   };
 
-  const interestOptions = [
-    'Legacy Mentorship Program',
-    'E1T1 Education Fund',
-    'F.R.E.E.D Skills Hub'
-  ];
+  const interestOptions = registration.interests;
 
   return (
     <section id="registration" className="py-24 bg-gradient-to-b from-white to-gray-50 relative overflow-hidden">
@@ -155,12 +153,12 @@ export function RegistrationForm() {
               animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.6 }}
             >
-              <span className="text-[#C39223] uppercase tracking-widest text-sm">Ready to Transform?</span>
+              <span className="text-[#C39223] uppercase tracking-widest text-sm">{registration.label}</span>
               <div className="h-1 w-20 bg-[#C39223] mt-2 mx-auto mb-4"></div>
-              <h2 className="text-4xl md:text-5xl lg:text-6xl text-black">Program Registration</h2>
-              <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
-                Take the first step towards empowerment. Register for our life-changing programs and initiatives designed to unlock your potential and build your legacy.
-              </p>
+              <h2 className="text-4xl md:text-5xl lg:text-6xl text-black">{registration.title}</h2>
+              {registration.intro && (
+                <p className="text-gray-600 mt-4 max-w-2xl mx-auto">{registration.intro}</p>
+              )}
             </motion.div>
           </div>
 
@@ -421,9 +419,9 @@ export function RegistrationForm() {
               </div>
 
               {/* Privacy Notice */}
-              <p className="text-sm text-gray-500 text-center mt-6">
-                By submitting this form, you agree to be contacted by Ehyeh Youth Foundation regarding membership and programs.
-              </p>
+              {registration.notice && (
+                <p className="text-sm text-gray-500 text-center mt-6">{registration.notice}</p>
+              )}
             </form>
           </motion.div>
         </motion.div>

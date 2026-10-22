@@ -1,13 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { Star, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Quote, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AbstractShapes } from './AbstractShapes';
-import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useState, useEffect } from 'react';
-import { getTestimonials } from '../utils/adminStorage';
-import victorImage from 'figma:asset/4c53b366fa6e4b21dd5d92f5fe707914fb515271.png';
-import elizabethImage from 'figma:asset/e3cc66de3cd3d478c6713fe36314e09ba0c3834d.png';
-import rashidImage from 'figma:asset/af2f36aedd8ef9ca63bcdf6cb22755f306c65bc4.png';
+import { useSiteContent } from '../content/store';
 
 export function TestimonialsSection() {
   const [ref, inView] = useInView({
@@ -15,16 +11,10 @@ export function TestimonialsSection() {
     threshold: 0.1,
   });
 
-  const [testimonials, setTestimonials] = useState<any[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    let active = true;
-    getTestimonials().then((storedTestimonials) => {
-      if (active) setTestimonials(storedTestimonials);
-    });
-    return () => { active = false; };
-  }, []);
+  const { testimonials, testimonialsSection } = useSiteContent().content;
+  const [rawIndex, setCurrentIndex] = useState(0);
+  // Stay in range if testimonials are removed while the page is open.
+  const currentIndex = testimonials.length ? rawIndex % testimonials.length : 0;
 
   const prevSlide = () => {
     setCurrentIndex((prev) => (prev === 0 ? testimonials.length - 1 : prev - 1));
@@ -77,9 +67,9 @@ export function TestimonialsSection() {
               animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.6 }}
             >
-              <span className="text-[#C39223] uppercase tracking-widest text-sm">Success Stories</span>
+              <span className="text-[#C39223] uppercase tracking-widest text-sm">{testimonialsSection.label}</span>
               <div className="h-1 w-20 bg-[#C39223] mt-2 mx-auto mb-4"></div>
-              <h2 className="text-4xl md:text-5xl lg:text-6xl text-white">Testimonials</h2>
+              <h2 className="text-4xl md:text-5xl lg:text-6xl text-white">{testimonialsSection.title}</h2>
             </motion.div>
           </div>
 
@@ -136,11 +126,13 @@ export function TestimonialsSection() {
                   )}
 
                   {/* Highlight */}
+                  {currentTestimonial.highlight && (
                   <div className="text-center mb-6">
                     <span className="inline-block bg-black text-white px-6 py-2 rounded-full text-sm">
                       {currentTestimonial.highlight}
                     </span>
                   </div>
+                  )}
 
                   {/* Author */}
                   <div className="text-center">

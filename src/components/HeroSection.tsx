@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { AbstractShapes } from './AbstractShapes';
-import heroImage from 'figma:asset/20819b45a1e4911bf8c3e2175f46ea1338b52a61.png';
+import { useSiteContent } from '../content/store';
 
 export function HeroSection() {
+  const { hero } = useSiteContent().content;
+
   const scrollToContact = () => {
     const element = document.getElementById('contact');
     if (element) {
@@ -16,8 +18,8 @@ export function HeroSection() {
       {/* Background Image with Enhanced Overlay */}
       <div className="absolute inset-0 bg-black">
         <img
-          src={heroImage}
-          alt="EYF Youth Empowerment - Together Building Legacy"
+          src={hero.image}
+          alt=""
           className="w-full h-full object-cover object-center"
           style={{ 
             imageRendering: 'crisp-edges',
@@ -50,9 +52,9 @@ export function HeroSection() {
             className="text-5xl md:text-7xl lg:text-8xl text-white tracking-tight"
             style={{ fontFamily: "'Poppins', sans-serif" }}
           >
-            Empowered Youth,
-            <br />
-            <span className="text-[#C39223]">Eternal Legacies.</span>
+            {hero.headingLine1}
+            {hero.headingLine1 && hero.headingLine2 && <br />}
+            <span className="text-[#C39223]">{hero.headingLine2}</span>
           </motion.h1>
 
           {/* Vision Statement */}
@@ -62,9 +64,7 @@ export function HeroSection() {
             transition={{ duration: 0.8, delay: 0.7 }}
             className="text-lg md:text-xl lg:text-2xl text-gray-200 max-w-4xl mx-auto leading-relaxed"
           >
-            Together, we are shaping a generation that dares to dream beyond limitations, 
-            leads with empathy and integrity, and rises with the courage to transform their 
-            communities—building a future that outlives them and echoes through generations to come.
+            {hero.intro}
           </motion.p>
 
           {/* CTA Button */}
@@ -80,7 +80,7 @@ export function HeroSection() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              Get Involved
+              {hero.buttonText}
             </motion.button>
           </motion.div>
         </motion.div>

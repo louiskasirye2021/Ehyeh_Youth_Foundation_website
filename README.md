@@ -12,6 +12,12 @@ The site is static (GitHub Pages), but the editable content (About, Programs, Ga
 
 A section that has never been saved shows the original content bundled in `src/utils/adminStorage.ts`. Edits go live for every visitor as soon as they are saved, with no rebuild or redeploy.
 
+## Updating an existing setup (October 2026)
+
+The admin panel now edits every part of the site (banner, contact details, footer, FAQ, privacy, terms…). Run `supabase/update-2026-10.sql` once in the Supabase SQL Editor so the database accepts the new sections. New projects can skip this; `setup.sql` already includes it.
+
+Where content lives in the code: `src/content/defaults.ts` holds the original text and images, `src/content/store.ts` loads and saves it, and `src/admin/schema.ts` lists every field the admin panel shows. To make a new piece of text editable, add it to `defaults.ts` and `schema.ts`, then read it in the component with `useSiteContent()`.
+
 ## One-time Supabase setup
 
 1. Open the Supabase project. The site uses the project in `src/utils/supabase/info.tsx` by default. To use a different one, copy `.env.example` to `.env` and fill in its URL and anon key.

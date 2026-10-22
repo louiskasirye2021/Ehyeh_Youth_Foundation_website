@@ -6,8 +6,20 @@ import { AbstractShapes } from './AbstractShapes';
 import emailjs from '@emailjs/browser';
 import { toast } from 'sonner';
 import { EMAILJS_CONFIG } from '../utils/emailConfig';
+import { useSiteContent } from '../content/store';
+import { safeHref } from './RichText';
+
+/** Accepts either the embed link or the whole <iframe> code Google Maps gives you. */
+function mapEmbedSrc(value: string) {
+  const fromIframe = value.match(/src=["']([^"']+)["']/i);
+  const src = (fromIframe ? fromIframe[1] : value).trim();
+  return /^https:\/\/(www\.)?google\.[a-z.]+\/maps\/embed/i.test(src) ? src : '';
+}
 
 export function ContactSection() {
+  const { contact } = useSiteContent().content;
+  const mapSrc = mapEmbedSrc(contact.mapEmbed || '');
+  const mapHref = safeHref(contact.mapLink);
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.1,
@@ -49,7 +61,7 @@ export function ContactSection() {
     try {
       // Send email using EmailJS
       const templateParams = {
-        to_email: 'eyf.legacies@gmail.com',
+        to_email: contact.email,
         from_name: formData.name,
         from_email: formData.email,
         subject: `Contact Form: ${formData.subject}`,
@@ -108,12 +120,12 @@ export function ContactSection() {
               animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.6 }}
             >
-              <span className="text-[#C39223] uppercase tracking-widest text-sm">Join The Movement</span>
+              <span className="text-[#C39223] uppercase tracking-widest text-sm">{contact.label}</span>
               <div className="h-1 w-20 bg-[#C39223] mt-2 mx-auto mb-4"></div>
-              <h2 className="text-4xl md:text-5xl lg:text-6xl text-black">Become Part of E.Y.F</h2>
-              <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
-                Whether you're interested in volunteering, partnering with us, offering support, or exploring collaboration opportunities—we'd love to hear from you. Together, we can create lasting impact.
-              </p>
+              <h2 className="text-4xl md:text-5xl lg:text-6xl text-black">{contact.title}</h2>
+              {contact.intro && (
+                <p className="text-gray-600 mt-4 max-w-2xl mx-auto">{contact.intro}</p>
+              )}
             </motion.div>
           </div>
 
@@ -126,11 +138,10 @@ export function ContactSection() {
               className="space-y-8"
             >
               <div>
-                <h3 className="text-3xl text-black mb-6">Let's Connect</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Whether you want to volunteer, partner with us, or learn more about our programs, 
-                  we'd love to hear from you. Together, we can empower the next generation.
-                </p>
+                <h3 className="text-3xl text-black mb-6">{contact.connectTitle}</h3>
+                {contact.connectText && (
+                  <p className="text-gray-600 leading-relaxed">{contact.connectText}</p>
+                )}
               </div>
 
               {/* Contact Cards */}
@@ -143,8 +154,11 @@ export function ContactSection() {
                     </div>
                     <div>
                       <h4 className="text-lg text-black mb-1">Phone</h4>
-                      <p className="text-gray-600">+256 755 992 026</p>
-                      <p className="text-gray-600">+256 788 268 464</p>
+                      {contact.phones.map((phone, i) => (
+                        <p key={i} className="text-gray-600">
+                          <a href={`tel:${phone.replace(/[^+\d]/g, '')}`} className="hover:text-[#C39223]">{phone}</a>
+                        </p>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -157,14 +171,16 @@ export function ContactSection() {
                     </div>
                     <div>
                       <h4 className="text-lg text-black mb-1">Email</h4>
-                      <p className="text-gray-600">eyf.legacies@gmail.com</p>
+                      <p className="text-gray-600">
+                        <a href={`mailto:${contact.email}`} className="hover:text-[#C39223] break-all">{contact.email}</a>
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 {/* Address */}
                 <a
-                  href="https://www.google.com/maps/place/Lourdel+Towers/@0.3313397,32.574246,686m/data=!3m2!1e3!4b1!4m6!3m5!1s0x177dbb74a7766f75:0x8ccd5e98c34d7bc5!8m2!3d0.3313343!4d32.5768209!16s%2Fg%2F11cs0d2yz7?entry=ttu&g_ep=EgoyMDI1MTAwOC4wIKXMDSoASAFQAw%3D%3D"
+                  href={mapHref || undefined}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all border border-gray-100 hover:border-[#C39223] block group"
@@ -175,18 +191,23 @@ export function ContactSection() {
                     </div>
                     <div>
                       <h4 className="text-lg text-black mb-1">Location</h4>
-                      <p className="text-gray-600">Lourdel Towers, Kampala</p>
-                      <p className="text-gray-600 text-sm mt-1">P.O. Box 127928 Kampala, Uganda</p>
-                      <p className="text-[#C39223] text-sm mt-2 group-hover:underline">Click to view on Google Maps →</p>
+                      <p className="text-gray-600">{contact.addressLine}</p>
+                      {contact.addressDetail && (
+                        <p className="text-gray-600 text-sm mt-1">{contact.addressDetail}</p>
+                      )}
+                      {mapHref && (
+                        <p className="text-[#C39223] text-sm mt-2 group-hover:underline">Click to view on Google Maps →</p>
+                      )}
                     </div>
                   </div>
                 </a>
               </div>
 
-              {/* Map Placeholder */}
+              {/* Map */}
+              {mapSrc && (
               <div className="bg-gray-200 rounded-2xl h-64 md:h-80 overflow-hidden shadow-lg">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.7558733628234!2d32.574246!3d0.3313397!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x177dbb74a7766f75%3A0x8ccd5e98c34d7bc5!2sLourdel%20Towers!5e0!3m2!1sen!2sug!4v1650000000000!5m2!1sen!2sug"
+                  src={mapSrc}
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -197,6 +218,7 @@ export function ContactSection() {
                   className="rounded-2xl"
                 ></iframe>
               </div>
+              )}
             </motion.div>
 
             {/* Contact Form */}

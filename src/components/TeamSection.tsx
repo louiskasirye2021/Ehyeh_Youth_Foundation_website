@@ -1,12 +1,7 @@
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { Linkedin, Mail } from 'lucide-react';
 import { AbstractShapes } from './AbstractShapes';
-import { ImageWithFallback } from './figma/ImageWithFallback';
-import { useState, useEffect } from 'react';
-import { getTeamMembers } from '../utils/adminStorage';
-import lucyImage from 'figma:asset/25ce06d8368056839a9b2b8982c7dd47409a36cd.png';
-import latifahImage from 'figma:asset/2b75ebe65558dd1cd0425b1798eafe07b2dc0f65.png';
+import { useSiteContent } from '../content/store';
 
 export function TeamSection() {
   const [ref, inView] = useInView({
@@ -14,18 +9,8 @@ export function TeamSection() {
     threshold: 0.1,
   });
 
-  const [team, setTeam] = useState<any[]>([]);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    getTeamMembers().then((storedTeam) => {
-      if (!active) return;
-      setTeam(storedTeam);
-      setLoaded(true);
-    });
-    return () => { active = false; };
-  }, []);
+  const { content, ready: loaded } = useSiteContent();
+  const { team, teamSection } = content;
 
   return (
     <section id="team" className="py-24 bg-white relative overflow-hidden">
@@ -46,7 +31,7 @@ export function TeamSection() {
               animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.6 }}
             >
-              <h2 className="text-4xl md:text-5xl lg:text-6xl text-black mb-8">Meet the Team</h2>
+              <h2 className="text-4xl md:text-5xl lg:text-6xl text-black mb-8">{teamSection.title}</h2>
             </motion.div>
           </div>
 
@@ -62,7 +47,7 @@ export function TeamSection() {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
               {team.map((member, index) => (
                 <motion.div
-                  key={index}
+                  key={member.id || index}
                   initial={{ opacity: 0, y: 30 }}
                   animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
                   transition={{ duration: 0.6, delay: index * 0.15 }}

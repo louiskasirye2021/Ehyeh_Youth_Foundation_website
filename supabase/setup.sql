@@ -4,7 +4,7 @@
 -- 1. Where the website content lives (one row per section) ------------------
 create table if not exists public.site_content (
   section    text primary key
-             check (section in ('programs', 'testimonials', 'blog', 'gallery', 'team', 'about')),
+             constraint site_content_section_check check (section ~ '^[a-zA-Z]{2,40}$'),
   data       jsonb not null,
   updated_at timestamptz not null default now()
 );

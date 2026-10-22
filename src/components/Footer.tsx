@@ -1,6 +1,8 @@
 import { Heart, Youtube, Twitter, Instagram, Linkedin, Mail, Phone } from 'lucide-react';
 import { AbstractShapes } from './AbstractShapes';
 import logo from 'figma:asset/4ecad429389694574aea2121c507d8e3e7142ef3.png';
+import { useSiteContent } from '../content/store';
+import { safeHref } from './RichText';
 
 // TikTok SVG Icon Component
 function TikTokIcon({ size = 18 }: { size?: number }) {
@@ -16,12 +18,25 @@ function TikTokIcon({ size = 18 }: { size?: number }) {
   );
 }
 
+const socialLinks = [
+  { key: 'youtube', label: 'YouTube', Icon: Youtube },
+  { key: 'instagram', label: 'Instagram', Icon: Instagram },
+  { key: 'x', label: 'X (Twitter)', Icon: Twitter },
+  { key: 'linkedin', label: 'LinkedIn', Icon: Linkedin },
+  { key: 'tiktok', label: 'TikTok', Icon: TikTokIcon },
+];
+
 export function Footer() {
+  const { footer, contact } = useSiteContent().content;
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
+      return;
     }
+    // On another page (e.g. Stories): go home first, then scroll.
+    window.location.hash = '/';
+    setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 300);
   };
 
   const navigateToPage = (page: string) => {
@@ -51,26 +66,27 @@ export function Footer() {
                 className="h-20 w-auto md:h-24"
               />
             </div>
-            <p className="text-gray-400 leading-relaxed mb-6">
-              Empowering the youth, transforming tomorrow. Together, we shape a generation that leads with purpose.
-            </p>
+            {footer.tagline && (
+              <p className="text-gray-400 leading-relaxed mb-6">{footer.tagline}</p>
+            )}
             {/* Social Media */}
             <div className="flex gap-3">
-              <a href="https://www.youtube.com/channel/UCew3S6TrCXtD8iSZewX-ejQ" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#C39223] transition-colors">
-                <Youtube size={18} />
-              </a>
-              <a href="https://www.instagram.com/ehyeh_youth_foundation/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#C39223] transition-colors">
-                <Instagram size={18} />
-              </a>
-              <a href="https://x.com/EyfLegacies" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#C39223] transition-colors">
-                <Twitter size={18} />
-              </a>
-              <a href="https://www.linkedin.com/in/ehyeh-youth-foundation-aa4771404" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#C39223] transition-colors">
-                <Linkedin size={18} />
-              </a>
-              <a href="https://www.tiktok.com/@ehyehyouthfoundation?lang=en" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#C39223] transition-colors">
-                <TikTokIcon size={18} />
-              </a>
+              {socialLinks.map(({ key, label, Icon }) => {
+                const href = safeHref((footer as any)[key]);
+                if (!href) return null;
+                return (
+                  <a
+                    key={key}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#C39223] transition-colors"
+                  >
+                    <Icon size={18} />
+                  </a>
+                );
+              })}
             </div>
           </div>
 
@@ -94,7 +110,7 @@ export function Footer() {
                 </button>
               </li>
               <li>
-                <button onClick={() => scrollToSection('blog')} className="text-gray-400 hover:text-[#C39223] transition-colors">
+                <button onClick={() => navigateToPage('/stories')} className="text-gray-400 hover:text-[#C39223] transition-colors">
                   News & Stories
                 </button>
               </li>
@@ -140,14 +156,15 @@ export function Footer() {
               <li className="flex items-start gap-3">
                 <Phone size={18} className="text-[#C39223] mt-1 flex-shrink-0" />
                 <div className="text-gray-400">
-                  <p>+256 755 992 026</p>
-                  <p>+256 788 268 464</p>
+                  {contact.phones.map((phone, i) => (
+                    <p key={i}>{phone}</p>
+                  ))}
                 </div>
               </li>
               <li className="flex items-start gap-3">
                 <Mail size={18} className="text-[#C39223] mt-1 flex-shrink-0" />
-                <div className="text-gray-400">
-                  <p>eyf.legacies@gmail.com</p>
+                <div className="text-gray-400 break-all">
+                  <p>{contact.email}</p>
                 </div>
               </li>
               <li className="flex items-start gap-3">
@@ -157,9 +174,8 @@ export function Footer() {
                   </svg>
                 </div>
                 <div className="text-gray-400">
-                  <p>Lourdel Towers, Kampala</p>
-                  <p className="text-sm">P.O. Box 127928</p>
-                  <p className="text-sm">Kampala, Uganda</p>
+                  <p>{contact.addressLine}</p>
+                  {contact.addressDetail && <p className="text-sm">{contact.addressDetail}</p>}
                 </div>
               </li>
             </ul>
@@ -195,7 +211,7 @@ export function Footer() {
       {/* Made with Love */}
       <div className="bg-gradient-to-r from-[#C39223] to-[#b08520] py-3">
         <p className="text-center text-white text-sm flex items-center justify-center gap-2">
-          Made with <Heart size={16} className="fill-current" /> for Uganda's Youth
+          Made with <Heart size={16} className="fill-current" /> {footer.madeWith}
         </p>
       </div>
     </footer>

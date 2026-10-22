@@ -3,13 +3,7 @@ import { useInView } from 'react-intersection-observer';
 import { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AbstractShapes } from './AbstractShapes';
-import { getGalleryImages } from '../utils/adminStorage';
-import outreachImage from 'figma:asset/4e976b786b3c9210027aa1f4ae29bade1c41bf84.png';
-import easterImage from 'figma:asset/8699283214e5eb50bfc25cdcc553639e00d46e71.png';
-import menteesImage from 'figma:asset/0c51c6d1634fdbf9c1e8ba2151c2dc75ca70aab9.png';
-import easterOutreach2 from 'figma:asset/42be2c9f2d3fbc59a4c12d000474a2feeacde27e.png';
-import stBalikudembeStudents from 'figma:asset/82cd7a56e33baae87fcbeea52ca9768829fe6f9c.png';
-import stBalikudembeSession from 'figma:asset/063bf2501bf926301a229a559a409b1d81accced.png';
+import { useSiteContent } from '../content/store';
 
 export function GallerySection() {
   const [ref, inView] = useInView({
@@ -18,16 +12,10 @@ export function GallerySection() {
   });
 
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [images, setImages] = useState<any[]>([]);
-
-  useEffect(() => {
-    let active = true;
-    getGalleryImages().then((storedImages) => {
-      if (active) setImages(storedImages);
-    });
-    return () => { active = false; };
-  }, []);
+  const [rawIndex, setCurrentIndex] = useState(0);
+  const { gallery: images, gallerySection } = useSiteContent().content;
+  // Stay in range if images are removed while the page is open.
+  const currentIndex = images.length ? rawIndex % images.length : 0;
 
   // Auto-slide functionality
   useEffect(() => {
@@ -79,12 +67,12 @@ export function GallerySection() {
               animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.6 }}
             >
-              <span className="text-[#C39223] uppercase tracking-widest text-sm">Our Journey</span>
+              <span className="text-[#C39223] uppercase tracking-widest text-sm">{gallerySection.label}</span>
               <div className="h-1 w-20 bg-[#C39223] mt-2 mx-auto mb-4"></div>
-              <h2 className="text-4xl md:text-5xl lg:text-6xl text-black">Gallery</h2>
-              <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
-                Capturing moments of transformation, growth, and community impact.
-              </p>
+              <h2 className="text-4xl md:text-5xl lg:text-6xl text-black">{gallerySection.title}</h2>
+              {gallerySection.intro && (
+                <p className="text-gray-600 mt-4 max-w-2xl mx-auto">{gallerySection.intro}</p>
+              )}
             </motion.div>
           </div>
 
