@@ -91,8 +91,37 @@ function normalizeSubProgram(sub: any) {
   };
 }
 
+const normalizeStat = (x: any) => ({
+  ...withId(x, 'stat'),
+  icon: asText(x?.icon),
+  value: asText(x?.value),
+  label: asText(x?.label),
+  text: asText(x?.text),
+});
+
+const normalizePoint = (x: any) => ({
+  ...withId(x, 'point'),
+  icon: asText(x?.icon),
+  title: asText(x?.title),
+  text: asText(x?.text),
+});
+
+/** Tab name for programs saved before tabs existed. */
+function guessTabLabel(title: string) {
+  if (/mentorship|LMP/i.test(title)) return 'Mentorship';
+  if (/education|E1T1|school/i.test(title)) return 'Education';
+  if (/skill|F\.?R\.?E\.?E\.?D/i.test(title)) return 'Skills';
+  return title.length > 24 ? `${title.slice(0, 22)}…` : title || 'Program';
+}
+
 export function normalizeProgram(program: any) {
   const p = { ...withId(program, 'program') };
+
+  // Programs saved before the tab layout have no key points or stats:
+  // borrow the defaults for the same program.
+  const original = (DEFAULT_CONTENT.programs as any[]).find((d) => d.id === p.id);
+  if (!Array.isArray(p.points)) p.points = original ? structuredClone(original.points) : [];
+  if (!Array.isArray(p.stats)) p.stats = original ? structuredClone(original.stats) : [];
 
   // Old shape: { F, R, E, E2, D }  ->  [{ letter, word }]
   if (p.acronym && !Array.isArray(p.acronym) && typeof p.acronym === 'object') {
@@ -119,11 +148,14 @@ export function normalizeProgram(program: any) {
   return {
     ...p,
     title: asText(p.title),
+    tabLabel: asText(p.tabLabel) || guessTabLabel(asText(p.title)),
     icon: typeof p.icon === 'string' ? p.icon : '',
     modules: asStrings(p.modules),
     subPrograms: asArray(p.subPrograms).map(normalizeSubProgram),
     acronym: asArray(p.acronym).map((a: any) => ({ ...withId(a, 'acr'), letter: asText(a?.letter), word: asText(a?.word) })),
     promises: asArray(p.promises).map((x: any) => ({ ...withId(x, 'promise'), title: asText(x?.title), text: asText(x?.text) })),
+    stats: asArray(p.stats).map(normalizeStat),
+    points: asArray(p.points).map(normalizePoint),
   };
 }
 
@@ -197,15 +229,15 @@ function normalizeSection(key: SectionKey, value: any): any {
     case 'gallery':
     case 'team':
       return asArray(value).map((item: any) => withId(item, key));
-    case 'programsSection':
+    case 'programsSection': {
+      const { highlights: _oldBoxes, ...rest } = value;
       return {
-        ...value,
-        highlights: asArray(value.highlights).map((h: any) => ({
-          ...withId(h, 'highlight'),
-          title: asText(h?.title),
-          items: asStrings(h?.items),
-        })),
+        ...rest,
+        overviewImage: asText(value.overviewImage),
+        overviewStats: asArray(value.overviewStats).map(normalizeStat),
+        overviewPoints: asArray(value.overviewPoints).map(normalizePoint),
       };
+    }
     case 'registration':
       return { ...value, interests: asStrings(value.interests) };
     case 'contact':

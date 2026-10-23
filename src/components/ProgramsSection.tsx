@@ -1,186 +1,169 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { Users, ArrowRight, Target, Award } from 'lucide-react';
+import { useRef, useState, type KeyboardEvent } from 'react';
 import { AbstractShapes } from './AbstractShapes';
-import { useState } from 'react';
-import { ProgramModal } from './ProgramModal';
-import { ProgramIcon } from './ProgramIcon';
+import { ProgramDetails } from './ProgramPanel';
+import { TabSplitPanel } from './TabSplitPanel';
 import { useSiteContent } from '../content/store';
 
-const HIGHLIGHT_STYLES = [
-  { card: 'bg-black text-white', badge: 'bg-[#C39223]', icon: Target, iconClass: '', title: '', list: 'text-gray-300' },
-  { card: 'bg-[#C39223] text-white', badge: 'bg-black', icon: Users, iconClass: 'text-[#C39223]', title: '', list: 'text-white/95' },
-  { card: 'bg-white border-2 border-[#C39223]', badge: 'bg-[#C39223]', icon: Award, iconClass: 'text-white', title: 'text-black', list: 'text-gray-700' },
-];
+const OVERVIEW = 'overview';
+const NAV_HEIGHT = 80; // the fixed menu bar at the top of the page
 
 export function ProgramsSection() {
-  const [ref, inView] = useInView({
-    triggerOnce: true,
-    threshold: 0.1,
-  });
-
-  const [selectedProgram, setSelectedProgram] = useState<number | null>(null);
+  const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.05 });
   const { programs, programsSection } = useSiteContent().content;
 
+  const tabs = [
+    { id: OVERVIEW, label: programsSection.overviewTabLabel || 'Overview' },
+    ...programs.map((p) => ({ id: p.id, label: p.tabLabel || p.title })),
+  ];
+  const [selected, setSelected] = useState(OVERVIEW);
+  const active = tabs.some((t) => t.id === selected) ? selected : OVERVIEW;
+  const activeIndex = tabs.findIndex((t) => t.id === active);
+  const program = programs.find((p) => p.id === active);
+
+  const barRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const select = (id: string) => {
+    setSelected(id);
+    // If the reader had scrolled down a long tab, bring the new tab's start into view.
+    const panel = panelRef.current;
+    const bar = barRef.current;
+    if (panel && bar) {
+      const offset = NAV_HEIGHT + bar.offsetHeight;
+      const top = panel.getBoundingClientRect().top;
+      if (top < offset - 40) {
+        window.scrollTo({ top: window.scrollY + top - offset, behavior: 'smooth' });
+      }
+    }
+    const index = tabs.findIndex((t) => t.id === id);
+    tabRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  };
+
+  const onTabKey = (e: KeyboardEvent<HTMLButtonElement>) => {
+    const last = tabs.length - 1;
+    const next =
+      e.key === 'ArrowRight' ? (activeIndex === last ? 0 : activeIndex + 1)
+      : e.key === 'ArrowLeft' ? (activeIndex === 0 ? last : activeIndex - 1)
+      : e.key === 'Home' ? 0
+      : e.key === 'End' ? last
+      : null;
+    if (next === null) return;
+    e.preventDefault();
+    select(tabs[next].id);
+    tabRefs.current[next]?.focus();
+  };
+
   return (
-    <section id="programs" className="py-24 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
-      {/* Abstract Shapes */}
-      <AbstractShapes />
-      
-      <div className="container mx-auto px-4 lg:px-8 relative z-10">
-        <motion.div
-          ref={ref}
-          initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 1 } : { opacity: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          {/* Section Header */}
-          <div className="text-center mb-16">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-              transition={{ duration: 0.6 }}
-            >
-              <span className="text-[#C39223] uppercase tracking-widest text-sm">{programsSection.label}</span>
-              <div className="h-1 w-20 bg-[#C39223] mt-2 mx-auto mb-4"></div>
-              <h2 className="text-4xl md:text-5xl lg:text-6xl text-black">{programsSection.title}</h2>
-            </motion.div>
-          </div>
-
-          {/* Program Cards */}
-          {programs.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-gray-500 text-lg">No programs available yet.</p>
-              <p className="text-gray-400 text-sm mt-2">Programs will appear here once added by the administrator.</p>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-              {programs.map((program, index) => (
-                <motion.div
-                  key={program.id || index}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-                  transition={{ duration: 0.6, delay: index * 0.2 }}
-                  className="group"
-                >
-                  <div className="bg-white rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 h-full flex flex-col">
-                    {/* Image */}
-                    <div className="relative h-64 overflow-hidden">
-                      <img
-                        src={program.image}
-                        alt={program.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        loading="lazy"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI0YzRjRGNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM5Q0EzQUYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Qcm9ncmFtIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                      <div className="absolute bottom-4 left-4">
-                        <div className="w-14 h-14 bg-[#C39223] rounded-2xl flex items-center justify-center">
-                          <ProgramIcon icon={program.icon} index={index} size={28} />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-6 flex-1 flex flex-col">
-                      <h3 className="text-2xl text-black mb-2">{program.title}</h3>
-                      {program.subtitle && (
-                        <p className="text-[#C39223] text-sm mb-3">{program.subtitle}</p>
-                      )}
-                      <p className="text-gray-600 mb-6">{program.description}</p>
-
-                      {/* Modules */}
-                      <div className="mb-6 flex-1">
-                        {program.modules.length > 0 && (
-                        <>
-                        <h4 className="text-sm text-black mb-3">Key Modules:</h4>
-                        <ul className="space-y-2">
-                          {program.modules.slice(0, 3).map((module, idx) => (
-                            <li key={idx} className="text-sm text-gray-600 flex items-start">
-                              <span className="text-[#C39223] mr-2">•</span>
-                              {module}
-                            </li>
-                          ))}
-                        </ul>
-                        </>
-                        )}
-                      </div>
-
-                      {/* Sub-programs or Target */}
-                      {program.subPrograms.length > 0 && (
-                        <div className="mb-6 bg-gray-50 rounded-2xl p-4">
-                          <h4 className="text-sm text-black mb-2">Sub-Programs:</h4>
-                          {program.subPrograms.map((sub, idx) => (
-                            <div key={(sub as { id?: string }).id || idx} className="text-sm mb-2">
-                              <span className="text-[#C39223]">{sub.name}</span>
-                              <p className="text-gray-600 text-xs">{sub.desc}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {program.target && (
-                        <div className="mb-6 bg-[#C39223]/10 rounded-2xl p-4">
-                          <h4 className="text-sm text-black mb-1">Target Audience:</h4>
-                          <p className="text-sm text-gray-700">{program.target}</p>
-                        </div>
-                      )}
-
-                      {/* Read More Button */}
-                      <button
-                        className="w-full bg-black text-white py-3 rounded-full hover:bg-[#C39223] transition-all group/btn flex items-center justify-center gap-2"
-                        onClick={() => setSelectedProgram(index)}
-                      >
-                        <span>Read More</span>
-                        <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-
-          {/* Expected Outcomes, Beneficiaries & Sustainability */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
-            className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto"
-          >
-            {programsSection.highlights.map((highlight, index) => {
-              const style = HIGHLIGHT_STYLES[index % HIGHLIGHT_STYLES.length];
-              const Icon = style.icon;
-              return (
-                <div key={highlight.id || index} className={`${style.card} rounded-3xl p-8 shadow-xl`}>
-                  <div className={`w-12 h-12 ${style.badge} rounded-2xl flex items-center justify-center mb-4`}>
-                    <Icon size={24} className={style.iconClass} />
-                  </div>
-                  <h3 className={`text-xl mb-4 ${style.title}`}>{highlight.title}</h3>
-                  <ul className={`space-y-2 text-sm ${style.list}`}>
-                    {highlight.items.map((item, i) => (
-                      <li key={i}>• {item}</li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })}
-          </motion.div>
-        </motion.div>
+    <section id="programs" className="py-24 bg-[#FAF8F4] relative">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <AbstractShapes />
       </div>
 
-      {/* Program Modal */}
-      {selectedProgram !== null && programs[selectedProgram] && (
-        <ProgramModal
-          isOpen={selectedProgram !== null}
-          program={programs[selectedProgram]}
-          index={selectedProgram}
-          onClose={() => setSelectedProgram(null)}
-        />
-      )}
+      <div className="mx-auto px-4 lg:px-10 relative z-10 max-w-[1520px]" ref={ref}>
+        {/* Section Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-10"
+        >
+          <span className="text-[#C39223] uppercase tracking-widest text-sm">{programsSection.label}</span>
+          <div className="h-1 w-20 bg-[#C39223] mt-2 mx-auto mb-4"></div>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl text-black">{programsSection.title}</h2>
+        </motion.div>
+
+        {/* Tabs: a pill bar that sits over the top edge of the panel */}
+        <div ref={barRef} className="sticky top-[88px] z-30 flex justify-center px-1 -mb-7">
+          <div
+            role="tablist"
+            aria-label={programsSection.title}
+            className="flex w-full max-w-[1100px] overflow-x-auto rounded-full bg-[#F1EDE6]/95 backdrop-blur border border-black/5 shadow-[0_6px_20px_-10px_rgba(0,0,0,0.25)] p-1"
+            style={{ scrollbarWidth: 'none' }}
+          >
+            {tabs.map((tab, index) => {
+              const isActive = tab.id === active;
+              const showDivider = index > 0 && !isActive && index - 1 !== activeIndex;
+              return (
+                <button
+                  key={tab.id}
+                  ref={(el) => {
+                    tabRefs.current[index] = el;
+                  }}
+                  id={`program-tab-${tab.id}`}
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-controls="program-tabpanel"
+                  tabIndex={isActive ? 0 : -1}
+                  onClick={() => select(tab.id)}
+                  onKeyDown={onTabKey}
+                  className={`relative flex-1 min-w-0 px-2.5 sm:px-6 py-2.5 sm:py-3.5 rounded-full text-sm sm:text-lg whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C39223] focus-visible:ring-offset-2 ${
+                    isActive ? 'text-white' : 'text-gray-800 hover:text-black'
+                  }`}
+                >
+                  {showDivider && (
+                    <span className="absolute left-0 top-1/4 h-1/2 w-px bg-black/10" aria-hidden="true" />
+                  )}
+                  {isActive && (
+                    <motion.span
+                      layoutId="program-tab-pill"
+                      className="absolute inset-0 rounded-full bg-[#C39223] shadow-[0_6px_16px_-6px_rgba(195,146,35,0.8)]"
+                      transition={{ type: 'spring', stiffness: 450, damping: 38 }}
+                    />
+                  )}
+                  <span className="relative">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Panel */}
+        <div
+          ref={panelRef}
+          id="program-tabpanel"
+          role="tabpanel"
+          aria-labelledby={`program-tab-${active}`}
+          className="scroll-mt-48"
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={active}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.22 }}
+            >
+              {program ? (
+                <>
+                  <TabSplitPanel
+                    eyebrow={program.tabLabel}
+                    title={program.title}
+                    text={program.description}
+                    stats={program.stats}
+                    points={program.points}
+                    image={program.image}
+                    quote={program.subtitle}
+                  />
+                  <ProgramDetails program={program} />
+                </>
+              ) : (
+                <TabSplitPanel
+                  eyebrow={programsSection.overviewTabLabel}
+                  title={programsSection.overviewTitle}
+                  text={programsSection.overviewIntro}
+                  stats={programsSection.overviewStats}
+                  points={programsSection.overviewPoints}
+                  image={programsSection.overviewImage}
+                  quote={programsSection.overviewQuote}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
     </section>
   );
 }

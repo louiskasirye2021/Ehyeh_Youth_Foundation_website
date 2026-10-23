@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { handleFileUpload } from '../utils/imageUpload';
 import { FORMAT_HELP, type Field, type ListField } from './schema';
+import { ICONS, iconFor } from '../content/icons';
 
 const inputClass =
   'w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-[#C39223] focus:ring-2 focus:ring-[#C39223]/20 focus:outline-none transition-colors';
@@ -432,6 +433,28 @@ function FieldInput({ field, value, onChange, depth }: { field: Field; value: an
       );
     case 'image':
       return <ImageInput field={field} value={text} onChange={onChange} />;
+    case 'icon': {
+      const Preview = iconFor(text);
+      return (
+        <div>
+          <FieldLabel id={id} field={field} />
+          <div className="flex items-center gap-3">
+            <span className="w-10 h-10 rounded-full bg-[#C39223]/15 text-[#8a6614] flex items-center justify-center flex-shrink-0" aria-hidden="true">
+              <Preview size={20} />
+            </span>
+            <select id={id} value={text} onChange={(e) => onChange(e.target.value)} className={`${inputClass} max-w-xs`}>
+              {!ICONS[text] && <option value="">Choose an icon</option>}
+              {Object.entries(ICONS).map(([name, { label }]) => (
+                <option key={name} value={name}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Help text={field.help} />
+        </div>
+      );
+    }
     case 'strings':
       return <StringListInput field={field} value={value} onChange={onChange} />;
     case 'list':

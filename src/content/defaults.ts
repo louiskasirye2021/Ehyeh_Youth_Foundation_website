@@ -71,40 +71,18 @@ export const DEFAULT_CONTENT = {
   programsSection: {
     label: 'What We Do',
     title: 'Programs & Initiatives',
-    highlights: [
-      {
-        id: 'outcomes',
-        title: 'Expected Outcomes',
-        items: [
-          'Improved personal and professional development',
-          'Increased access to quality education',
-          'More young people kept in school',
-          'Sustainable businesses by young entrepreneurs',
-          'Vocational school & mentorship center',
-        ],
-      },
-      {
-        id: 'beneficiaries',
-        title: 'Target Beneficiaries',
-        items: [
-          'Children and youth in underprivileged communities',
-          'Teenage mothers',
-          'Aspiring youth-entrepreneurs',
-          'Entry level employees & vacists',
-          'Individuals seeking mentorship & coaching',
-        ],
-      },
-      {
-        id: 'sustainability',
-        title: 'Sustainability',
-        items: [
-          'Mentorship & coaching for entities',
-          'Partnerships with local communities',
-          'Annual fundraising events',
-          'Vocational school & training center',
-          'Income-generating projects',
-        ],
-      },
+    overviewTabLabel: 'Overview',
+    overviewTitle: 'Building confident, capable and connected young people.',
+    overviewIntro: 'The Ehyeh Youth Foundation runs integrated programs that nurture talent, build skills and create opportunities for young people to thrive. Through mentorship, education, skills development and community support, we equip youth with the tools they need for a brighter future.',
+    overviewImage: menteesImage,
+    overviewQuote: 'Empowered Youth, Eternal Legacies.',
+    // Impact numbers, e.g. { icon: 'people', value: '1,500+', label: 'Young People Reached', text: 'Across our programs.' }.
+    // Left empty until the foundation confirms its real figures.
+    overviewStats: [] as { id: string; icon: string; value: string; label: string; text: string }[],
+    overviewPoints: [
+      { id: 'ov-audience', icon: 'target', title: 'Target Audience', text: 'Young people (ages 10–25), especially those from underserved communities.' },
+      { id: 'ov-beneficiaries', icon: 'people', title: 'Beneficiaries', text: 'Youth, families, local communities and future leaders.' },
+      { id: 'ov-focus', icon: 'care', title: 'Our Focus', text: 'Mentorship, education, skills development, leadership and community impact.' },
     ],
   },
 
@@ -112,6 +90,13 @@ export const DEFAULT_CONTENT = {
     {
       id: '1',
       title: 'Legacy Mentorship Program (LMP)',
+      tabLabel: 'Mentorship',
+      stats: [] as { id: string; icon: string; value: string; label: string; text: string }[],
+      points: [
+        { id: 'lmp-ages', icon: 'people', title: 'Who It Serves', text: 'Pre-teens, teenagers, young adults and young professionals.' },
+        { id: 'lmp-format', icon: 'book', title: 'How It Works', text: 'Training sessions, group discussions, projects and expert speakers.' },
+        { id: 'lmp-award', icon: 'award', title: 'Recognition', text: 'Each module ends with a commissioning ceremony and certificates.' },
+      ],
       subtitle: 'Changing their tomorrow today!!',
       description: 'A comprehensive mentorship ecosystem designed to nurture and empower young people at every stage of their journey. Through structured programs tailored to different age groups and contexts, LMP provides the guidance, skills, and support needed to unlock potential and build lasting legacies.',
       fullDescription: 'The Legacy Mentorship Program encompasses four specialized modules, each addressing the unique developmental needs of specific age groups and life situations. From early adolescence through young adulthood, and into professional development, our mentorship approach combines training sessions, group discussions, relevant assignments, outreach programs, projects, and expert speakers. Each module is crowned by a commissioning ceremony with certificate awards, and outstanding participants are retained as future mentors, creating a sustainable cycle of empowerment.',
@@ -313,6 +298,13 @@ export const DEFAULT_CONTENT = {
     {
       id: '2',
       title: 'E1T1 Education Fund',
+      tabLabel: 'Education',
+      stats: [] as { id: string; icon: string; value: string; label: string; text: string }[],
+      points: [
+        { id: 'e1t1-support', icon: 'graduation', title: 'What We Provide', text: 'Scholarships, school supplies, tutoring and digital literacy.' },
+        { id: 'e1t1-partners', icon: 'partnership', title: 'Who Can Join', text: 'Young professionals, companies, NGOs, schools and partners.' },
+        { id: 'e1t1-event', icon: 'calendar', title: 'Annual Fundraiser', text: 'Held every September to share our dream and success stories.' },
+      ],
       subtitle: 'Each One Teach One',
       description: 'Through fundraising and collaboration with fellow Ugandans, together with like-minded entities, we aim to see over 1 million brilliant yet underprivileged youth through school—giving them a chance to better their lives and transform their communities.',
       fullDescription: 'The E1T1 Education fund targets young corporate individuals, Civil Society Organizations (CSOs), NGOs, community-based organizations, educational institutions, private sector partners, government agencies, and other organizations that understand and appreciate the need to educate our own and therefore have a desire to join hands to make this happen. E.Y.F will have an annual fund-raising event in September to bring together young people, corporate entities and organizations to share our dream and some of the success stories with them and have them contribute to this cause.',
@@ -332,6 +324,13 @@ export const DEFAULT_CONTENT = {
     {
       id: '3',
       title: 'F.R.E.E.D Skills Hub',
+      tabLabel: 'Skills',
+      stats: [] as { id: string; icon: string; value: string; label: string; text: string }[],
+      points: [
+        { id: 'freed-who', icon: 'heart', title: 'Who It Serves', text: 'Teen mothers and young women seeking a second chance.' },
+        { id: 'freed-skills', icon: 'skills', title: 'Skills Taught', text: 'Tailoring, baking, hairdressing, business and money management.' },
+        { id: 'freed-outcome', icon: 'growth', title: 'The Result', text: 'Self-starters with income-generating skills and confidence.' },
+      ],
       subtitle: 'See Me Fly!',
       description: 'Fearless. Resilient. Empowered. Exceptional. Determined. Together, these words represent the spirit and strength of young people, especially girls, inspiring them to embrace their uniqueness, overcome their current challenges, and reach for their dreams with confidence and courage.',
       fullDescription: 'Through skills development training programs, think tanks, and innovation sessions, participants are taught vocational and income generating skills. They become self starters and gain business skills to help them better and change their lives. This strand is mainly aimed at helping teen mothers that may have dropped out of school due to early pregnancies and abandoned by family as a result. Through this program they get a second chance at life.',

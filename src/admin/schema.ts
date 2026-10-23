@@ -30,6 +30,7 @@ export type Field =
   | (BaseField & { kind: 'text'; placeholder?: string })
   | (BaseField & { kind: 'textarea'; rows?: number; formatted?: boolean; placeholder?: string })
   | (BaseField & { kind: 'image' })
+  | (BaseField & { kind: 'icon' })
   | (BaseField & { kind: 'date' })
   | (BaseField & { kind: 'link'; placeholder?: string })
   | (BaseField & { kind: 'strings'; itemLabel: string })
@@ -77,6 +78,39 @@ export interface EditorTab {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+const statsField = (help: string): Field => ({
+  kind: 'list',
+  key: 'stats',
+  label: 'Stats (numbers)',
+  help,
+  itemLabel: 'stat',
+  titleKey: 'value',
+  subtitle: (x) => x.label,
+  fields: [
+    { kind: 'text', key: 'value', label: 'Number', required: true, placeholder: 'e.g. 1,500+' },
+    { kind: 'text', key: 'label', label: 'What it counts', placeholder: 'e.g. Young People Reached' },
+    { kind: 'text', key: 'text', label: 'Small text underneath' },
+    { kind: 'icon', key: 'icon', label: 'Icon' },
+  ],
+  newItem: () => ({ id: newId('stat'), icon: 'people', value: '', label: '', text: '' }),
+});
+
+const pointsField = (help: string): Field => ({
+  kind: 'list',
+  key: 'points',
+  label: 'Key points (bottom row)',
+  help,
+  itemLabel: 'key point',
+  titleKey: 'title',
+  subtitle: (x) => x.text,
+  fields: [
+    { kind: 'text', key: 'title', label: 'Title', required: true, placeholder: 'e.g. Target Audience' },
+    { kind: 'textarea', key: 'text', label: 'Text', rows: 2 },
+    { kind: 'icon', key: 'icon', label: 'Icon' },
+  ],
+  newItem: () => ({ id: newId('point'), icon: 'star', title: '', text: '' }),
+});
+
 const FORMAT_HELP = 'Leave a blank line between paragraphs. Start a line with "- " for a bullet point. Put **double stars** around words to make them bold.';
 
 const headingFields = (opts: { intro?: boolean; label?: boolean } = {}): Field[] => [
@@ -91,7 +125,7 @@ const headingFields = (opts: { intro?: boolean; label?: boolean } = {}): Field[]
 
 const subProgramFields: Field[] = [
   { kind: 'text', key: 'name', label: 'Name', required: true },
-  { kind: 'textarea', key: 'desc', label: 'Description', rows: 4, formatted: true, help: 'Also shown on the program card on the home page.' },
+  { kind: 'textarea', key: 'desc', label: 'Description', rows: 4, formatted: true },
   { kind: 'text', key: 'duration', label: 'Duration' },
   { kind: 'text', key: 'format', label: 'Format' },
   { kind: 'text', key: 'groupSize', label: 'Group size' },
@@ -114,15 +148,18 @@ const subProgramFields: Field[] = [
 ];
 
 const programFields: Field[] = [
+  { kind: 'text', key: 'tabLabel', label: 'Tab name', required: true, help: 'The short name on this program\'s tab, e.g. "Mentorship".' },
   { kind: 'text', key: 'title', label: 'Program name', required: true },
   { kind: 'text', key: 'subtitle', label: 'Tagline', help: 'The gold line under the name.' },
   { kind: 'text', key: 'icon', label: 'Icon (emoji)', help: 'One emoji, e.g. 👥. Leave empty to use a default icon.' },
-  { kind: 'image', key: 'image', label: 'Program photo' },
-  { kind: 'textarea', key: 'description', label: 'Short description', rows: 4, help: 'Shown on the card and at the top of the pop-up.' },
-  { kind: 'strings', key: 'modules', label: 'Key modules & focus areas', itemLabel: 'module', help: 'The first 3 show on the card. All of them show in the pop-up.' },
-  { kind: 'textarea', key: 'fullDescription', label: 'More about this program (pop-up)', rows: 6, formatted: true },
-  { kind: 'textarea', key: 'goal', label: 'Our goal', rows: 2, help: 'Shown as a gold box in the pop-up. Leave empty to hide it.' },
-  { kind: 'textarea', key: 'target', label: 'Target audience', rows: 3, help: 'Shown on the card and in the pop-up. Leave empty to hide it.' },
+  { kind: 'image', key: 'image', label: 'Program photo', help: 'Shown on the right of the tab with a curved edge. The tagline appears over it in gold.' },
+  { kind: 'textarea', key: 'description', label: 'Short description', rows: 4, help: 'The paragraph under the program name at the top of the tab.' },
+  statsField('Optional. Leave empty and the tab simply shows no numbers.'),
+  pointsField('Up to 3 work best. Shown along the bottom of the top panel.'),
+  { kind: 'strings', key: 'modules', label: 'Key modules & focus areas', itemLabel: 'module' },
+  { kind: 'textarea', key: 'fullDescription', label: 'More about this program', rows: 6, formatted: true },
+  { kind: 'textarea', key: 'goal', label: 'Our goal', rows: 2, help: 'Shown as a gold box. Leave empty to hide it.' },
+  { kind: 'textarea', key: 'target', label: 'Target audience', rows: 3, help: 'Leave empty to hide it.' },
   { kind: 'text', key: 'acronymTitle', label: 'Acronym heading', help: 'e.g. "What F.R.E.E.D Stands For".' },
   {
     kind: 'list',
@@ -226,21 +263,22 @@ export const EDITOR_TABS: EditorTab[] = [
     group: 'home',
     label: 'Programs',
     icon: BookOpen,
-    description: 'Every program, its sub-programs, and the boxes under the programs.',
+    description: 'The Overview tab, and one tab per program with all its sub-programs.',
     sitePath: '#/',
     parts: [
       {
         key: 'programs',
         title: 'Programs',
-        description: 'Click a program to open all of its details, including its sub-programs.',
+        description: 'Each program is one tab on the website, in this order. Click a program to edit everything in its tab, including its sub-programs.',
         list: {
           itemLabel: 'program',
           titleKey: 'title',
-          subtitle: (p) => p.subtitle,
+          subtitle: (p) => [p.tabLabel && `Tab: ${p.tabLabel}`, p.subtitle].filter(Boolean).join(', '),
           imageKey: 'image',
           fields: programFields,
           newItem: () => ({
             id: newId('program'),
+            tabLabel: '',
             title: '',
             subtitle: '',
             icon: '',
@@ -255,27 +293,24 @@ export const EDITOR_TABS: EditorTab[] = [
             subPrograms: [],
             promisesTitle: '',
             promises: [],
+            stats: [],
+            points: [],
           }),
         },
       },
       {
         key: 'programsSection',
-        title: 'Section heading and boxes',
-        description: 'The heading above the programs, and the coloured boxes underneath them.',
+        title: 'Section heading and Overview tab',
+        description: 'The heading above the tabs, and everything in the Overview tab.',
         fields: [
           ...headingFields(),
-          {
-            kind: 'list',
-            key: 'highlights',
-            label: 'Boxes under the programs',
-            itemLabel: 'box',
-            titleKey: 'title',
-            fields: [
-              { kind: 'text', key: 'title', label: 'Box title', required: true },
-              { kind: 'strings', key: 'items', label: 'Points', itemLabel: 'point' },
-            ],
-            newItem: () => ({ id: newId('highlight'), title: '', items: [] }),
-          },
+          { kind: 'text', key: 'overviewTabLabel', label: 'Overview tab name', required: true },
+          { kind: 'text', key: 'overviewTitle', label: 'Overview heading' },
+          { kind: 'textarea', key: 'overviewIntro', label: 'Overview text', rows: 5, formatted: true },
+          { kind: 'image', key: 'overviewImage', label: 'Overview photo', help: 'Shown on the right with a curved edge.' },
+          { kind: 'text', key: 'overviewQuote', label: 'Quote over the photo', help: 'Leave empty to hide the gold quote.' },
+          { ...statsField('Optional impact numbers, e.g. "1,500+ Young People Reached". Only add figures you can stand behind.'), key: 'overviewStats' } as Field,
+          { ...pointsField('Up to 3 work best, e.g. Target Audience, Beneficiaries, Our Focus.'), key: 'overviewPoints' } as Field,
         ],
       },
     ],
