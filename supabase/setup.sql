@@ -82,6 +82,33 @@ create policy "Admins can delete site images"
   on storage.objects for delete to authenticated
   using (bucket_id = 'site-images' and public.is_site_admin());
 
+-- 4b. Reports (PDF and Word files) ------------------------------------------------
+-- Public bucket: anyone can open/download reports, only admins can upload or delete.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('site-documents', 'site-documents', true, 26214400,
+        array['application/pdf',
+              'application/msword',
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
+on conflict (id) do update
+  set public = excluded.public,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Admins can upload documents" on storage.objects;
+create policy "Admins can upload documents"
+  on storage.objects for insert to authenticated
+  with check (bucket_id = 'site-documents' and public.is_site_admin());
+
+drop policy if exists "Admins can replace documents" on storage.objects;
+create policy "Admins can replace documents"
+  on storage.objects for update to authenticated
+  using (bucket_id = 'site-documents' and public.is_site_admin());
+
+drop policy if exists "Admins can delete documents" on storage.objects;
+create policy "Admins can delete documents"
+  on storage.objects for delete to authenticated
+  using (bucket_id = 'site-documents' and public.is_site_admin());
+
 -- 5. Add the client's email as an admin ----------------------------------------
 -- First create their login in Authentication → Users → Add user
 -- (tick "Auto Confirm User"), then put the same email here and run this line:

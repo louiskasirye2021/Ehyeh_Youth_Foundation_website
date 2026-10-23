@@ -16,6 +16,9 @@ function findMissing(fields: Field[], value: any, where: string): string | null 
     if (field.required && (field.kind === 'text' || field.kind === 'textarea' || field.kind === 'image')) {
       if (typeof v !== 'string' || !v.trim()) return `${where}"${field.label}" can't be empty.`;
     }
+    if (field.required && field.kind === 'document' && !v?.url) {
+      return `${where}upload a file for "${field.label}".`;
+    }
     if (field.kind === 'list' && Array.isArray(v)) {
       for (let i = 0; i < v.length; i++) {
         const name = v[i]?.[field.titleKey] ? `"${v[i][field.titleKey]}"` : `${field.itemLabel} ${i + 1}`;

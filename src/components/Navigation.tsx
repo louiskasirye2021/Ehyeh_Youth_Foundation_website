@@ -55,8 +55,18 @@ export function Navigation() {
     { label: 'Gallery', id: 'gallery' },
     { label: 'Blog', id: 'blog' },
     { label: 'Team', id: 'team' },
+    { label: 'Reports', id: 'reports', page: '/reports' },
     { label: 'Contact', id: 'contact' },
   ];
+
+  const go = (item: { id: string; page?: string }) => {
+    if (item.page) {
+      setIsMobileMenuOpen(false);
+      window.location.hash = item.page;
+      return;
+    }
+    scrollToSection(item.id);
+  };
 
   return (
     <motion.nav
@@ -84,11 +94,11 @@ export function Navigation() {
           </button>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-8">
+          <div className="hidden lg:flex items-center space-x-7">
             {navItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => scrollToSection(item.id)}
+                onClick={() => go(item)}
                 className={`transition-colors relative group ${
                   isScrolled ? 'text-black hover:text-[#C39223]' : 'text-white hover:text-[#C39223]'
                 }`}
@@ -130,7 +140,7 @@ export function Navigation() {
               {navItems.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => scrollToSection(item.id)}
+                  onClick={() => go(item)}
                   className="block w-full text-left text-black hover:text-[#C39223] hover:bg-gray-100 py-3 px-4 rounded-lg transition-all text-lg"
                 >
                   {item.label}

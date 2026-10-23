@@ -48,6 +48,26 @@ export const BUNDLED_IMAGES: Record<string, string> = {
   stBalikudembeStudents, stBalikudembeSession,
 };
 
+/** An uploaded PDF or Word file. */
+export interface ReportFile {
+  url: string;
+  name: string;
+  type: string; // 'pdf' | 'docx' | 'doc'
+  size: number; // bytes
+}
+
+export interface Report {
+  id: string;
+  title: string;
+  summary: string;
+  category: string;
+  date: string; // YYYY-MM-DD, when the report was published
+  featured: boolean;
+  cover: string; // optional cover image
+  file: ReportFile | null;
+  createdAt?: number;
+}
+
 export const DEFAULT_CONTENT = {
   hero: {
     headingLine1: 'Empowered Youth,',
@@ -440,6 +460,7 @@ export const DEFAULT_CONTENT = {
   testimonialsSection: {
     label: 'Success Stories',
     title: 'Testimonials',
+    intro: 'Real stories. Lasting impact.',
   },
 
   gallerySection: {
@@ -454,20 +475,17 @@ export const DEFAULT_CONTENT = {
     intro: 'Stay updated with our latest activities, success stories, and community impact.',
   },
 
-  teamSection: {
-    title: 'Meet the Team',
+  reportsSection: {
+    label: 'Accountability',
+    title: 'Reports & Publications',
+    intro: 'Annual reports, financial statements and program reports, published openly for our partners, donors and community.',
   },
 
-  registration: {
-    label: 'Ready to Transform?',
-    title: 'Program Registration',
-    intro: 'Take the first step towards empowerment. Register for our life-changing programs and initiatives designed to unlock your potential and build your legacy.',
-    interests: [
-      'Legacy Mentorship Program',
-      'E1T1 Education Fund',
-      'F.R.E.E.D Skills Hub',
-    ],
-    notice: 'By submitting this form, you agree to be contacted by Ehyeh Youth Foundation regarding membership and programs.',
+  // Uploaded through the admin panel.
+  reports: [] as Report[],
+
+  teamSection: {
+    title: 'Meet the Team',
   },
 
   contact: {
@@ -478,10 +496,10 @@ export const DEFAULT_CONTENT = {
     connectText: "Whether you want to volunteer, partner with us, or learn more about our programs, we'd love to hear from you. Together, we can empower the next generation.",
     phones: ['+256 755 992 026', '+256 788 268 464'],
     email: 'eyf.legacies@gmail.com',
-    addressLine: 'Lourdel Towers, Kampala',
+    addressLine: 'AHA Towers, along Lourdel Road',
     addressDetail: 'P.O. Box 127928 Kampala, Uganda',
-    mapLink: 'https://www.google.com/maps/place/Lourdel+Towers/@0.3313397,32.574246,686m/data=!3m2!1e3!4b1!4m6!3m5!1s0x177dbb74a7766f75:0x8ccd5e98c34d7bc5!8m2!3d0.3313343!4d32.5768209!16s%2Fg%2F11cs0d2yz7?entry=ttu&g_ep=EgoyMDI1MTAwOC4wIKXMDSoASAFQAw%3D%3D',
-    mapEmbed: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.7558733628234!2d32.574246!3d0.3313397!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x177dbb74a7766f75%3A0x8ccd5e98c34d7bc5!2sLourdel%20Towers!5e0!3m2!1sen!2sug!4v1650000000000!5m2!1sen!2sug',
+    mapLink: 'https://www.google.com/maps/search/?api=1&query=AHA+Towers%2C+Lourdel+Road%2C+Kampala',
+    mapEmbed: 'https://maps.google.com/maps?q=AHA+Towers%2C+Lourdel+Road%2C+Kampala&z=16&output=embed',
   },
 
   footer: {
@@ -511,7 +529,7 @@ export const DEFAULT_CONTENT = {
         },
         {
           question: 'Where are you located?',
-          answer: 'Our main office is located at Lourdel Towers, Kampala, Uganda (P.O. Box 127928). However, we conduct programs at various schools, community centers, and partner locations throughout Kampala and surrounding areas.'
+          answer: 'Our main office is located at AHA Towers, along Lourdel Road, Kampala, Uganda (P.O. Box 127928). However, we conduct programs at various schools, community centers, and partner locations throughout Kampala and surrounding areas.'
         }
       ]
     },
@@ -528,7 +546,7 @@ export const DEFAULT_CONTENT = {
         },
         {
           question: 'How do I register for the LMP?',
-          answer: 'You can register through our website by filling out the registration form, or contact us directly via email (eyf.legacies@gmail.com) or phone (+256 755 992 026). For participants under 18, parental consent is required.'
+          answer: 'You can register by sending us a message through the contact form on our website, or contact us directly via email (eyf.legacies@gmail.com) or phone (+256 755 992 026). For participants under 18, parental consent is required.'
         },
         {
           question: 'Is there a cost to participate?',
@@ -575,7 +593,7 @@ export const DEFAULT_CONTENT = {
       questions: [
         {
           question: 'How can I volunteer with E.Y.F?',
-          answer: 'We welcome volunteers! You can sign up through our registration form on the website. We need mentors, skills trainers, event coordinators, administrative support, and more. All volunteers undergo orientation and training before working with our participants.'
+          answer: 'We welcome volunteers! You can sign up by sending us a message through the contact form on our website. We need mentors, skills trainers, event coordinators, administrative support, and more. All volunteers undergo orientation and training before working with our participants.'
         },
         {
           question: 'How can I donate or sponsor a program?',
@@ -613,7 +631,7 @@ export const DEFAULT_CONTENT = {
       questions: [
         {
           question: 'How can I contact E.Y.F?',
-          answer: 'Email: eyf.legacies@gmail.com | Phone: +256 755 992 026 or +256 788 268 464 | Address: Lourdel Towers, P.O. Box 127928, Kampala, Uganda. We typically respond to inquiries within 24-48 hours.'
+          answer: 'Email: eyf.legacies@gmail.com | Phone: +256 755 992 026 or +256 788 268 464 | Address: AHA Towers, along Lourdel Road, P.O. Box 127928, Kampala, Uganda. We typically respond to inquiries within 24-48 hours.'
         },
         {
           question: 'Do you offer virtual/online programs?',
@@ -680,7 +698,7 @@ export const DEFAULT_CONTENT = {
       },
       {
         heading: '12. Contact Us',
-        body: 'If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:\n\n**Email:** eyf.legacies@gmail.com\n**Phone:** +256 755 992 026 / +256 788 268 464\n**Address:** Lourdel Towers, P.O. Box 127928, Kampala, Uganda',
+        body: 'If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:\n\n**Email:** eyf.legacies@gmail.com\n**Phone:** +256 755 992 026 / +256 788 268 464\n**Address:** AHA Towers, along Lourdel Road, P.O. Box 127928, Kampala, Uganda',
       },
     ],
   },
@@ -727,7 +745,7 @@ export const DEFAULT_CONTENT = {
       },
       {
         heading: '10. Contact Information',
-        body: 'If you have any questions about these Terms & Conditions, please contact us:\n\n**Email:** eyf.legacies@gmail.com\n**Phone:** +256 755 992 026 / +256 788 268 464\n**Address:** Lourdel Towers, P.O. Box 127928, Kampala, Uganda',
+        body: 'If you have any questions about these Terms & Conditions, please contact us:\n\n**Email:** eyf.legacies@gmail.com\n**Phone:** +256 755 992 026 / +256 788 268 464\n**Address:** AHA Towers, along Lourdel Road, P.O. Box 127928, Kampala, Uganda',
       },
     ],
   },

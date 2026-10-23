@@ -8,8 +8,8 @@ const PROMISE_STYLES = [
   'bg-gradient-to-br from-green-50 to-white border border-green-100',
 ];
 
-function scrollToRegistration() {
-  document.getElementById('registration')?.scrollIntoView({ behavior: 'smooth' });
+function scrollToContact() {
+  document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
 }
 
 function Bullets({ items, icon = 'dot' }: { items: string[]; icon?: 'dot' | 'check' }) {
@@ -234,13 +234,13 @@ export function ProgramDetails({ program }: { program: any }) {
 
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 text-center">
         <h4 className="text-xl text-black mb-2">Interested in {program.title}?</h4>
-        <p className="text-gray-600 mb-5">Join us in making a difference. Register today.</p>
+        <p className="text-gray-600 mb-5">Send us a message and we'll tell you how to join.</p>
         <button
           type="button"
-          onClick={scrollToRegistration}
+          onClick={scrollToContact}
           className="bg-[#C39223] text-white px-8 py-3 rounded-full hover:bg-[#b08520] transition-colors shadow-lg"
         >
-          Register for this program
+          Get in touch
         </button>
       </div>
     </div>

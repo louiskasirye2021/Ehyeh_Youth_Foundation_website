@@ -105,13 +105,18 @@ export function Footer() {
                 </button>
               </li>
               <li>
-                <button onClick={() => scrollToSection('gallery')} className="text-gray-400 hover:text-[#C39223] transition-colors">
+                <button onClick={() => navigateToPage('/gallery')} className="text-gray-400 hover:text-[#C39223] transition-colors">
                   Gallery
                 </button>
               </li>
               <li>
                 <button onClick={() => navigateToPage('/stories')} className="text-gray-400 hover:text-[#C39223] transition-colors">
                   News & Stories
+                </button>
+              </li>
+              <li>
+                <button onClick={() => navigateToPage('/reports')} className="text-gray-400 hover:text-[#C39223] transition-colors">
+                  Reports
                 </button>
               </li>
             </ul>
@@ -122,7 +127,7 @@ export function Footer() {
             <h3 className="text-lg mb-6 text-[#C39223]">Get Involved</h3>
             <ul className="space-y-3">
               <li>
-                <button onClick={() => scrollToSection('registration')} className="text-gray-400 hover:text-[#C39223] transition-colors">
+                <button onClick={() => scrollToSection('contact')} className="text-gray-400 hover:text-[#C39223] transition-colors">
                   Volunteer Signup
                 </button>
               </li>
@@ -132,7 +137,7 @@ export function Footer() {
                 </button>
               </li>
               <li>
-                <button onClick={() => scrollToSection('registration')} className="text-gray-400 hover:text-[#C39223] transition-colors">
+                <button onClick={() => scrollToSection('contact')} className="text-gray-400 hover:text-[#C39223] transition-colors">
                   Partner With Us
                 </button>
               </li>

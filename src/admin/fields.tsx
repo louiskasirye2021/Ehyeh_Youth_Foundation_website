@@ -5,11 +5,15 @@ import {
   ChevronDown,
   ImagePlus,
   Loader2,
+  FileUp,
+  FileText,
+  ExternalLink,
   Plus,
   Trash2,
   X,
 } from 'lucide-react';
 import { handleFileUpload } from '../utils/imageUpload';
+import { uploadDocument, formatFileSize, fileTypeLabel, MAX_DOCUMENT_MB } from '../utils/documentUpload';
 import { FORMAT_HELP, type Field, type ListField } from './schema';
 import { ICONS, iconFor } from '../content/icons';
 
@@ -133,6 +137,100 @@ function ImageInput({ field, value, onChange }: { field: Field; value: string; o
               <X size={16} />
               Remove
             </button>
+          )}
+        </div>
+      </div>
+      <Help text={field.help} />
+    </div>
+  );
+}
+
+// ----- Document upload (reports) -------------------------------------------------
+
+function DocumentInput({ field, value, onChange }: { field: Field; value: any; onChange: (v: any) => void }) {
+  const id = useId();
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const file = value && typeof value === 'object' && value.url ? value : null;
+
+  const upload = async (picked: File | undefined) => {
+    if (!picked) return;
+    setUploading(true);
+    try {
+      const result = await uploadDocument(picked);
+      if (result) onChangeRef.current(result);
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  return (
+    <div>
+      <FieldLabel field={field} />
+      <div
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          upload(e.dataTransfer.files?.[0]);
+        }}
+        className={`rounded-xl border-2 border-dashed p-4 flex flex-wrap items-center gap-4 ${
+          file ? 'border-gray-200 bg-white' : 'border-gray-300 bg-gray-50'
+        }`}
+      >
+        <span
+          className={`w-12 h-14 rounded-md flex flex-col items-center justify-center text-[10px] font-semibold text-white flex-shrink-0 ${
+            !file ? 'bg-gray-300' : file.type === 'pdf' ? 'bg-red-600' : 'bg-blue-600'
+          }`}
+          aria-hidden="true"
+        >
+          <FileText size={18} />
+          {file ? fileTypeLabel(file.type) : ''}
+        </span>
+        <div className="flex-1 min-w-[10rem]">
+          {file ? (
+            <>
+              <p className="text-sm text-gray-900 break-all">{file.name}</p>
+              <p className="text-xs text-gray-500">
+                {fileTypeLabel(file.type)} file{file.size ? `, ${formatFileSize(file.size)}` : ''}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-gray-600">
+              Drag a file here, or choose one. PDF or Word, up to {MAX_DOCUMENT_MB}MB.
+            </p>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <input
+            ref={fileRef}
+            id={id}
+            type="file"
+            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            className="sr-only"
+            onChange={(e) => upload(e.target.files?.[0])}
+          />
+          <label
+            htmlFor={id}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm border border-gray-300 bg-white hover:border-[#C39223] cursor-pointer ${
+              uploading ? 'pointer-events-none opacity-60' : ''
+            }`}
+          >
+            {uploading ? <Loader2 size={16} className="animate-spin" /> : <FileUp size={16} />}
+            {uploading ? 'Uploading…' : file ? 'Replace file' : 'Choose file'}
+          </label>
+          {file && !uploading && (
+            <a
+              href={file.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100"
+            >
+              <ExternalLink size={16} />
+              Open
+            </a>
           )}
         </div>
       </div>
@@ -392,10 +490,38 @@ function FieldInput({ field, value, onChange, depth }: { field: Field; value: an
       return (
         <div>
           <FieldLabel id={id} field={field} />
-          <input id={id} value={text} placeholder={field.placeholder} onChange={(e) => onChange(e.target.value)} className={inputClass} />
+          <input
+            id={id}
+            value={text}
+            placeholder={field.placeholder}
+            onChange={(e) => onChange(e.target.value)}
+            className={inputClass}
+            list={field.suggestions ? `${id}-list` : undefined}
+          />
+          {field.suggestions && (
+            <datalist id={`${id}-list`}>
+              {field.suggestions.map((option) => (
+                <option key={option} value={option} />
+              ))}
+            </datalist>
+          )}
           <Help text={field.help} />
         </div>
       );
+    case 'toggle':
+      return (
+        <div>
+          <p className="block text-sm font-medium text-gray-800 mb-1.5">{field.label}</p>
+          <label className="inline-flex items-center gap-3 cursor-pointer select-none">
+            <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} className="peer sr-only" />
+            <span className="w-11 h-6 rounded-full bg-gray-300 peer-checked:bg-[#C39223] relative transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5 peer-focus-visible:ring-2 peer-focus-visible:ring-[#C39223] peer-focus-visible:ring-offset-2" />
+            <span className="text-sm text-gray-700">{field.onLabel || 'On'}</span>
+          </label>
+          <Help text={field.help} />
+        </div>
+      );
+    case 'document':
+      return <DocumentInput field={field} value={value} onChange={onChange} />;
     case 'link': {
       const invalid = text.trim() !== '' && !/^https?:\/\//i.test(text.trim());
       return (

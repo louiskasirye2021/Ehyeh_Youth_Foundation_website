@@ -8,13 +8,13 @@ import {
   Image as ImageIcon,
   Newspaper,
   Users,
-  ClipboardList,
   Phone,
   HelpCircle,
   Shield,
   Scale,
+  FileText as ReportIcon,
 } from 'lucide-react';
-import { newId, sortStoriesNewestFirst, type SectionKey } from '../content/store';
+import { newId, sortPhotosNewestFirst, sortStoriesNewestFirst, type SectionKey } from '../content/store';
 
 // Describes every editable field on the website. The admin editor is built
 // from these descriptions, so adding a field here adds it to the admin panel.
@@ -27,10 +27,12 @@ interface BaseField {
 }
 
 export type Field =
-  | (BaseField & { kind: 'text'; placeholder?: string })
+  | (BaseField & { kind: 'text'; placeholder?: string; suggestions?: string[] })
   | (BaseField & { kind: 'textarea'; rows?: number; formatted?: boolean; placeholder?: string })
   | (BaseField & { kind: 'image' })
   | (BaseField & { kind: 'icon' })
+  | (BaseField & { kind: 'document' })
+  | (BaseField & { kind: 'toggle'; onLabel?: string })
   | (BaseField & { kind: 'date' })
   | (BaseField & { kind: 'link'; placeholder?: string })
   | (BaseField & { kind: 'strings'; itemLabel: string })
@@ -334,15 +336,13 @@ export const EDITOR_TABS: EditorTab[] = [
           fields: [
             { kind: 'text', key: 'name', label: 'Name', required: true },
             { kind: 'text', key: 'role', label: 'School or role' },
-            { kind: 'image', key: 'image', label: 'Photo' },
-            { kind: 'textarea', key: 'quote', label: 'Quote', rows: 4, required: true },
-            { kind: 'textarea', key: 'message', label: 'Message to others', rows: 3, help: 'Shown in a lighter box under the quote. Leave empty to hide it.' },
-            { kind: 'text', key: 'highlight', label: 'Highlight', help: 'A few words shown in a black pill.' },
+            { kind: 'image', key: 'image', label: 'Photo', help: 'A portrait (taller than wide) photo of the person works best.' },
+            { kind: 'textarea', key: 'quote', label: 'Quote', rows: 4, required: true, help: 'Two to four sentences read best on the card.' },
           ],
           newItem: () => ({ id: newId('testimonial'), name: '', role: '', image: '', quote: '', message: '', highlight: '' }),
         },
       },
-      { key: 'testimonialsSection', title: 'Section heading', fields: headingFields() },
+      { key: 'testimonialsSection', title: 'Section heading', fields: headingFields({ intro: true }) },
     ],
   },
   {
@@ -350,23 +350,27 @@ export const EDITOR_TABS: EditorTab[] = [
     group: 'home',
     label: 'Gallery',
     icon: ImageIcon,
-    description: 'Photos in the gallery slideshow.',
-    sitePath: '#/',
+    description: 'Polaroid photos. The 10 newest show on the home page; all of them are on the gallery page.',
+    sitePath: '#/gallery',
     parts: [
       {
         key: 'gallery',
         title: 'Photos',
+        description: 'Newest photos show first. The 10 newest appear on the home page (6 on phones); the rest are on the "View all photos" page.',
+        prepare: (photos) => sortPhotosNewestFirst(photos),
         list: {
           itemLabel: 'photo',
           titleKey: 'caption',
           subtitle: (g) => g.category,
           imageKey: 'url',
+          addAtStart: true,
+          autoOrdered: true,
           fields: [
             { kind: 'image', key: 'url', label: 'Photo', required: true },
-            { kind: 'text', key: 'caption', label: 'Caption' },
-            { kind: 'text', key: 'category', label: 'Category' },
+            { kind: 'text', key: 'caption', label: 'Caption', help: 'Written in handwriting under the photo. Short is best, e.g. "Community in action."' },
+            { kind: 'text', key: 'category', label: 'Category', help: 'Used for the filter buttons on the gallery page.' },
           ],
-          newItem: () => ({ id: newId('photo'), url: '', caption: '', category: '' }),
+          newItem: () => ({ id: newId('photo'), url: '', caption: '', category: '', createdAt: Date.now() }),
         },
       },
       { key: 'gallerySection', title: 'Section heading', fields: headingFields({ intro: true }) },
@@ -420,6 +424,57 @@ export const EDITOR_TABS: EditorTab[] = [
     ],
   },
   {
+    id: 'reports',
+    group: 'pages',
+    label: 'Reports',
+    icon: ReportIcon,
+    description: 'Upload annual, financial and program reports (PDF or Word) for the Reports page.',
+    sitePath: '#/reports',
+    parts: [
+      {
+        key: 'reports',
+        title: 'Reports',
+        description: 'Reports are listed newest first, by their publication date. Visitors can search, filter, preview and download them.',
+        prepare: (reports) => sortStoriesNewestFirst(reports),
+        list: {
+          itemLabel: 'report',
+          titleKey: 'title',
+          subtitle: (r) => [r.date, r.category, r.file?.name].filter(Boolean).join(', '),
+          imageKey: 'cover',
+          addAtStart: true,
+          autoOrdered: true,
+          fields: [
+            { kind: 'document', key: 'file', label: 'Report file (PDF or Word)', required: true },
+            { kind: 'text', key: 'title', label: 'Title', required: true, placeholder: 'e.g. Annual Report 2025' },
+            { kind: 'date', key: 'date', label: 'Publication date', help: 'Used for sorting and the year filter.' },
+            {
+              kind: 'text',
+              key: 'category',
+              label: 'Category',
+              suggestions: ['Annual Report', 'Financial Report', 'Program Report', 'Impact Report', 'Newsletter', 'Policy'],
+              help: 'Pick a suggestion or type your own. Categories become filter buttons on the Reports page.',
+            },
+            { kind: 'textarea', key: 'summary', label: 'Short summary', rows: 3, help: 'One or two sentences about what the report covers.' },
+            { kind: 'image', key: 'cover', label: 'Cover image (optional)', help: 'e.g. the report\'s front page. Without one, a styled document cover is shown.' },
+            { kind: 'toggle', key: 'featured', label: 'Feature this report', onLabel: 'Show it large at the top of the Reports page' },
+          ],
+          newItem: () => ({
+            id: newId('report'),
+            title: '',
+            summary: '',
+            category: '',
+            date: today(),
+            featured: false,
+            cover: '',
+            file: null,
+            createdAt: Date.now(),
+          }),
+        },
+      },
+      { key: 'reportsSection', title: 'Page heading', fields: headingFields({ intro: true }) },
+    ],
+  },
+  {
     id: 'team',
     group: 'home',
     label: 'Team',
@@ -444,25 +499,6 @@ export const EDITOR_TABS: EditorTab[] = [
         },
       },
       { key: 'teamSection', title: 'Section heading', fields: headingFields({ label: false }) },
-    ],
-  },
-  {
-    id: 'registration',
-    group: 'home',
-    label: 'Registration',
-    icon: ClipboardList,
-    description: 'The program registration form.',
-    sitePath: '#/',
-    parts: [
-      {
-        key: 'registration',
-        title: 'Registration form',
-        fields: [
-          ...headingFields({ intro: true }),
-          { kind: 'strings', key: 'interests', label: 'Programs people can choose', itemLabel: 'program' },
-          { kind: 'textarea', key: 'notice', label: 'Note under the button', rows: 2 },
-        ],
-      },
     ],
   },
   {

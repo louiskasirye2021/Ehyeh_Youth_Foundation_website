@@ -173,6 +173,23 @@ function normalizePost(post: any) {
   };
 }
 
+function normalizeReport(r: any) {
+  const f = r?.file && typeof r.file === 'object' ? r.file : null;
+  return {
+    ...withId(r, 'report'),
+    title: asText(r?.title),
+    summary: asText(r?.summary),
+    category: asText(r?.category),
+    date: asText(r?.date),
+    featured: r?.featured === true,
+    cover: asText(r?.cover),
+    file: f && typeof f.url === 'string' && f.url
+      ? { url: f.url, name: asText(f.name) || 'report', type: asText(f.type).toLowerCase(), size: Number(f.size) || 0 }
+      : null,
+    createdAt: typeof r?.createdAt === 'number' ? r.createdAt : undefined,
+  };
+}
+
 function timeOf(date: string) {
   const t = Date.parse(date);
   return Number.isNaN(t) ? 0 : t;
@@ -201,6 +218,25 @@ export function sortStoriesNewestFirst<T extends { id?: string; date?: string; c
     .map(({ post }) => post);
 }
 
+/**
+ * Newest photos first. Uses the time a photo was added; the original photos
+ * (ids "1", "2", …) are ordered by their number. Never depends on list
+ * position, so saving in the admin panel can't change the order.
+ */
+function photoTime(photo: { id?: string; createdAt?: number }) {
+  const t = addedAt(photo);
+  if (t) return t;
+  const id = String(photo.id ?? '');
+  return /^\d{1,6}$/.test(id) ? Number(id) : 0;
+}
+
+export function sortPhotosNewestFirst<T extends { id?: string; createdAt?: number }>(photos: T[]): T[] {
+  return photos
+    .map((photo, index) => ({ photo, index }))
+    .sort((a, b) => photoTime(b.photo) - photoTime(a.photo) || a.index - b.index)
+    .map(({ photo }) => photo);
+}
+
 /** Combine a saved section with its defaults and repair its shape. */
 export function mergeSection<K extends SectionKey>(key: K, stored: any): SiteContent[K] {
   const fallback = structuredClone(DEFAULT_CONTENT[key]) as any;
@@ -225,6 +261,8 @@ function normalizeSection(key: SectionKey, value: any): any {
       return asArray(value).map(normalizeProgram);
     case 'blog':
       return asArray(value).map(normalizePost);
+    case 'reports':
+      return asArray(value).map(normalizeReport);
     case 'testimonials':
     case 'gallery':
     case 'team':
@@ -238,8 +276,6 @@ function normalizeSection(key: SectionKey, value: any): any {
         overviewPoints: asArray(value.overviewPoints).map(normalizePoint),
       };
     }
-    case 'registration':
-      return { ...value, interests: asStrings(value.interests) };
     case 'contact':
       return { ...value, phones: asStrings(value.phones) };
     case 'faq':

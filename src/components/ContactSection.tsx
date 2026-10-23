@@ -13,7 +13,11 @@ import { safeHref } from './RichText';
 function mapEmbedSrc(value: string) {
   const fromIframe = value.match(/src=["']([^"']+)["']/i);
   const src = (fromIframe ? fromIframe[1] : value).trim();
-  return /^https:\/\/(www\.)?google\.[a-z.]+\/maps\/embed/i.test(src) ? src : '';
+  // Google's "Embed a map" link, or a simple maps.google.com/maps?q=…&output=embed link.
+  const ok =
+    /^https:\/\/(www\.)?google\.[a-z.]+\/maps\/embed/i.test(src) ||
+    (/^https:\/\/(maps|www)\.google\.[a-z.]+\/maps\?/i.test(src) && /[?&]output=embed\b/.test(src));
+  return ok ? src.replace(/&amp;/g, '&') : '';
 }
 
 export function ContactSection() {

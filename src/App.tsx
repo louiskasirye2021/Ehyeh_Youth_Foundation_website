@@ -7,13 +7,14 @@ import { TestimonialsSection } from './components/TestimonialsSection';
 import { GallerySection } from './components/GallerySection';
 import { BlogSection } from './components/BlogSection';
 import { TeamSection } from './components/TeamSection';
-import { RegistrationForm } from './components/RegistrationForm';
 import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
 import { TermsConditions } from './pages/TermsConditions';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { FAQ } from './pages/FAQ';
 import { StoriesPage } from './pages/StoriesPage';
+import { GalleryPage } from './pages/GalleryPage';
+import { ReportsPage } from './pages/ReportsPage';
 import { loadSiteContent, useSiteContent } from './content/store';
 import logo from 'figma:asset/4ecad429389694574aea2121c507d8e3e7142ef3.png';
 import { AdminLogin } from './components/AdminLogin';
@@ -30,6 +31,8 @@ function pageFromHash() {
   if (hash === '/faq') return 'faq';
   if (hash === '/admin') return 'admin';
   if (hash === '/stories' || hash.startsWith('/stories/')) return 'stories';
+  if (hash === '/gallery') return 'gallery';
+  if (hash === '/reports' || hash.startsWith('/reports/')) return 'reports';
   return 'home';
 }
 
@@ -99,6 +102,24 @@ export default function App() {
     );
   }
 
+  if (currentPage === 'reports') {
+    return (
+      <>
+        <ReportsPage />
+        <Toaster position="top-right" />
+      </>
+    );
+  }
+
+  if (currentPage === 'gallery') {
+    return (
+      <>
+        <GalleryPage />
+        <Toaster position="top-right" />
+      </>
+    );
+  }
+
   if (currentPage === 'terms') {
     return <TermsConditions />;
   }
@@ -129,7 +150,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div className="min-h-screen bg-white overflow-x-clip">
       <Navigation />
       <main>
         <HeroSection />
@@ -139,7 +160,6 @@ export default function App() {
         <GallerySection />
         <BlogSection />
         <TeamSection />
-        <RegistrationForm />
         <ContactSection />
       </main>
       <Footer />
