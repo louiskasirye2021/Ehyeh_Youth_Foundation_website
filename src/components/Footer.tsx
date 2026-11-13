@@ -1,6 +1,6 @@
 import { Heart, Youtube, Twitter, Instagram, Linkedin, Mail, Phone } from 'lucide-react';
 import { AbstractShapes } from './AbstractShapes';
-import logo from 'figma:asset/4ecad429389694574aea2121c507d8e3e7142ef3.png';
+import { BrandLogo } from './BrandLogo';
 import { useSiteContent } from '../content/store';
 import { safeHref } from './RichText';
 
@@ -60,11 +60,7 @@ export function Footer() {
           {/* About Column */}
           <div>
             <div className="flex items-center mb-6">
-              <img 
-                src={logo} 
-                alt="Ehyeh Youth Foundation" 
-                className="h-20 w-auto md:h-24"
-              />
+<BrandLogo tone="light" className="h-28 md:h-32" />
             </div>
             {footer.tagline && (
               <p className="text-gray-400 leading-relaxed mb-6">{footer.tagline}</p>

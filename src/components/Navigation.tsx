@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import logo from 'figma:asset/4ecad429389694574aea2121c507d8e3e7142ef3.png';
+import { NavLogo } from './BrandLogo';
 
 export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -82,19 +82,14 @@ export function Navigation() {
           {/* Logo */}
           <button
             onClick={() => scrollToSection('hero')}
-            className="flex items-center space-x-2 group"
+            className="flex items-center shrink-0 rounded-md transition-transform duration-200 hover:scale-[1.03] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C39223]"
+            aria-label="Ehyeh Youth Foundation, go to top"
           >
-            <motion.img
-              src={logo}
-              alt="Ehyeh Youth Foundation"
-              className="h-16 w-auto md:h-20 lg:h-24 object-contain"
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.2 }}
-            />
+            <NavLogo onLight={isScrolled} />
           </button>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-7">
+          <div className="hidden lg:flex items-center gap-5 xl:gap-7">
             {navItems.map((item) => (
               <button
                 key={item.id}

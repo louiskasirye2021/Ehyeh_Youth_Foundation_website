@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, Mail, Eye, EyeOff, LogIn } from 'lucide-react';
-import logo from 'figma:asset/4ecad429389694574aea2121c507d8e3e7142ef3.png';
+import { BrandLogo } from './BrandLogo';
 import { supabase } from '../lib/supabase';
 
 // Sign-in is handled by Supabase Auth. Once signed in, App.tsx picks up the
@@ -48,11 +48,7 @@ export function AdminLogin() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <img 
-            src={logo} 
-            alt="Ehyeh Youth Foundation" 
-            className="h-20 w-auto mx-auto mb-4"
-          />
+<BrandLogo className="h-24 mx-auto mb-4" />
           <h1 className="text-3xl text-black mb-2">Admin Portal</h1>
           <p className="text-gray-600">Ehyeh Youth Foundation</p>
         </div>

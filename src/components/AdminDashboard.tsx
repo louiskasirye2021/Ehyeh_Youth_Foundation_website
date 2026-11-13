@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { LogOut, Menu, X, UploadCloud, Info, ArrowLeft } from 'lucide-react';
 import { findLegacyEdits, publishLegacyEdits, clearLegacyEdits } from '../utils/legacyImport';
 import { toast } from 'sonner@2.0.3';
-import logo from 'figma:asset/4ecad429389694574aea2121c507d8e3e7142ef3.png';
+import { BrandLogo } from './BrandLogo';
 import { EDITOR_TABS, OVERVIEW_TAB } from '../admin/schema';
 import { SectionEditor } from '../admin/SectionEditor';
 
@@ -156,7 +156,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         <div className="h-full flex flex-col">
           <div className="p-5 border-b border-gray-200 flex items-center justify-between">
             <div>
-              <img src={logo} alt="Ehyeh Youth Foundation" className="h-12 w-auto" />
+              <BrandLogo className="h-16" />
               <p className="text-xs text-gray-500 mt-1">Admin</p>
             </div>
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-600 hover:text-black" aria-label="Close menu">

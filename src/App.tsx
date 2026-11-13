@@ -16,7 +16,7 @@ import { StoriesPage } from './pages/StoriesPage';
 import { GalleryPage } from './pages/GalleryPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { loadSiteContent, useSiteContent } from './content/store';
-import logo from 'figma:asset/4ecad429389694574aea2121c507d8e3e7142ef3.png';
+import { BrandLogo } from './components/BrandLogo';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
 import { Toaster } from './components/ui/sonner';
@@ -86,7 +86,7 @@ export default function App() {
   if (!contentReady && currentPage !== 'admin') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-white" aria-busy="true">
-        <img src={logo} alt="Ehyeh Youth Foundation" className="h-24 w-auto animate-pulse" />
+        <BrandLogo className="h-28 animate-pulse" />
         <span className="sr-only">Loading</span>
       </div>
     );
